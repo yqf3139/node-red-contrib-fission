@@ -1,0 +1,32 @@
+{
+  "name": "node-red-contrib-fission",
+  "version": "0.1.0",
+  "description": "Node Red extension for Fission with function invocation/management and other commands support.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yqf3139/node-red-contrib-fission.git"
+  },
+  "keywords": [
+    "node-red",
+    "fission"
+  ],
+  "author": "yqf3139@gmail.com",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/yqf3139/node-red-contrib-fission/issues"
+  },
+  "homepage": "https://github.com/yqf3139/node-red-contrib-fission#readme",
+  "dependencies": {
+    "axios": "^0.16.2",
+    "express-http-proxy": "^1.0.5",
+    "url": "^0.11.0"
+  },
+  "node-red": {
+    "nodes": {
+      "fission-invocation": "nodes/fission-invocation.js"
+    }
+  }
+}

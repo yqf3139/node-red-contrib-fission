@@ -1,0 +1,366 @@
+<script type="text/javascript">
+    "use strict";
+
+    const controller = '/proxy/fission-controller';
+    const router = '/proxy/fission-router';
+
+    const envToAceMode = {
+        node: 'ace/mode/javascript',
+        nodejs: 'ace/mode/javascript',
+        python: 'ace/mode/python',
+    };
+
+    const extToEnv = {
+        js: 'node',
+        py: 'python',
+    };
+
+    RED.fission = {
+        importFunction(file, result) {
+            // post to fission
+            const index = file.name.lastIndexOf('.');
+            let funcname = '';
+            let environment = '';
+            let code = result;
+            if (index > -1) {
+                funcname = file.name.slice(0, index);
+                const ext = file.name.slice(index + 1);
+                environment = ext in extToEnv ? extToEnv[ext] : '';
+            }
+            if (!environment || !funcname || !code) {
+                RED.notify(`${file.name} is not a valid function`, "error");
+                return false;
+            }
+
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/functions`,
+                data: JSON.stringify(createFunction({funcname, environment, code})),
+                dataType: "json",
+                success: function (msg) {
+                    // create the new node with funcname
+                    setTimeout(() => addNode(funcname, environment), 50);
+                    console.log('Create function success,', msg);
+                    RED.notify(`Fission function [${funcname}] created`, "success");
+                },
+                error: function (err) {
+                    console.error(err);
+                    RED.notify(err.responseText, "error");
+                }
+            });
+            return true;
+        }
+    };
+
+    function createFunction(context) {
+        let serviceInstances = [];
+        if (context.serviceinstances && context.serviceinstances !== '') {
+            serviceInstances = context.serviceinstances.split(',');
+        }
+        return {
+            metadata: {
+                name: context.funcname || context.newname,
+            },
+            environment: {
+                name: context.environment,
+            },
+            code: btoa(context.code),
+            serviceInstances: serviceInstances,
+            cpuTarget: context.cputarget || 60,
+            maxInstances: context.maxinstance || 3,
+        }
+    }
+
+    function addNode(funcname, environment) {
+        const nn = RED.view.addNode('fission-invocation').node;
+        nn.x = 100 + parseInt(Math.random() * 200);
+        nn.y = 100 + parseInt(Math.random() * 200);
+        // TODO sync node info
+        nn.funcname = funcname;
+        nn.environment = environment;
+        console.log('nn', nn);
+        RED.nodes.add(nn);
+        RED.editor.validateNode(nn);
+        RED.nodes.dirty(true);
+        RED.view.redraw(true);
+    }
+
+    RED.nodes.registerType('fission-invocation', {
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: {value: ""},
+            readonly: {value: true},
+            errorflow: {value: true},
+            createnew: {value: false},
+
+            funcname: {value: "", required: true},
+            funcuid: {value: ""},
+            newname: {value: ""},
+            environment: {value: "", required: true},
+            code: {value: ""},
+            serviceinstances: {value: ""},
+            cputarget: {value: 60},
+            maxinstance: {value: 3},
+
+            outputs: {value: 2},
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: "function.png",
+        label: function () {
+            return this.name || this.funcname || "fission-invocation";
+        },
+        outputLabels: ["stdout","stderr"],
+        oneditsave: function () {
+            console.log('on save', this);
+
+            $("#node-input-code").val(this.editor.getValue());
+            this.editor.destroy();
+            delete this.editor;
+            // if is update able, call fission
+            // wait until the field values are stored by node-red
+            const that = this;
+            setTimeout(() => {
+                if (!that.readonly) {
+                    that.readonly = true;
+                    console.log('prepare to save fission', that);
+
+                    if (that.createnew) {
+                        if (!that.newname) {
+                            return;
+                        }
+                        const newname = that.newname;
+                        $.ajax({
+                            type: "POST",
+                            contentType: "application/json; charset=utf-8",
+                            url: `${controller}/v1/functions`,
+                            data: JSON.stringify(createFunction(that)),
+                            dataType: "json",
+                            success: function (msg) {
+                                console.log('Create function success,', msg);
+                                that.funcname = newname;
+
+                                RED.notify(`Fission function [${newname}] created`, "success");
+                            },
+                            error: function (err) {
+                                console.error(err);
+                                RED.notify(err.responseText, "error");
+                            }
+                        });
+                        that.newname = '';
+                        that.createnew = false;
+                        $('.fission-func-old-field').show();
+                        $('.fission-func-new-field').hide();
+                    } else {
+                        if (!that.funcname) {
+                            return;
+                        }
+                        $.ajax({
+                            type: "PUT",
+                            contentType: "application/json; charset=utf-8",
+                            url: `${controller}/v1/functions/${that.funcname}`,
+                            data: JSON.stringify(createFunction(that)),
+                            dataType: "json",
+                            success: function (msg) {
+                                console.log('Update function success,', msg);
+                                RED.notify(`Fission function [${that.funcname}] updated`, "success");
+                            },
+                            error: function (err) {
+                                console.error(err);
+                                RED.notify(err.responseText, "error");
+                            }
+                        });
+                    }
+                }
+            }, 200);
+        },
+        oneditcancel: function () {
+            this.editor.destroy();
+            delete this.editor;
+        },
+        oneditprepare: function () {
+            $("#node-input-outputs").spinner({min: 1, max: 10});
+            $("#node-input-cputarget").spinner({min: 1, max: 100});
+            $("#node-input-maxinstance").spinner({min: 1, max: 20});
+
+            $('#node-input-errorflow').val(this.errorflow);
+
+            const that = this;
+            this.editor = RED.editor.createEditor({
+                id: 'node-input-func-editor',
+                mode: 'ace/mode/javascript',
+                value: $("#node-input-code").val(),
+                readOnly: true,
+            });
+
+            const store = {};
+            $('.fission-container').hide();
+            $('.fission-loading-spinner').show();
+            $.when(
+                $.get(`${controller}/v1/environments`, (data, status) => {
+                    store.environments = data;
+                }),
+                $.get(`${controller}/v1/functions`, (data, status) => {
+                    store.functions = data;
+                }),
+            ).then(() => {
+                const envList = $('#node-input-environment');
+                const fnList = $('#node-input-funcname');
+
+                // fill in environment list
+                store.environments.map((e) => {
+                    $(`<option value='${e.metadata.name}'>${e.metadata.name}</option>`)
+                        .appendTo(envList);
+                });
+
+                // fill in function list
+                store.functions.map((f) => {
+                    $(`<option value='${f.metadata.name}'>${f.metadata.name}</option>`)
+                        .appendTo(fnList);
+                });
+
+                // select func and env
+                console.log('preselect', this);
+                envList.val(this.environment || '');
+                fnList.val(this.funcname || '');
+                if (this.funcname) {
+                    // select ace editor mode
+                    const mode = envToAceMode[this.environment];
+                    if (mode) {
+                        that.editor.getSession().setMode(mode);
+                    }
+
+                    // get the code
+                    $.get(`${controller}/v1/functions/${this.funcname}`, (data, status) => {
+                        that.editor.setValue(atob(data.code));
+                    });
+                }
+
+                // add event listeners
+                // function selection
+                fnList.change((e) => {
+                    const fnName = e.target.value;
+                    if (!fnName) return;
+
+                    const fn = store.functions.filter((f) => f.metadata.name === fnName)[0];
+                    console.log('select func', fnName, fn);
+
+                    envList.val(fn.environment.name);
+                    $('#node-input-funcuid').val(fn.metadata.uid);
+                    $('#node-input-serviceinstances').val(fn.serviceInstances.join(','));
+
+                    // select ace editor mode
+                    const mode = envToAceMode[this.environment];
+                    if (mode) {
+                        that.editor.getSession().setMode(mode);
+                    }
+                    // load the function code
+                    $.get(`${controller}/v1/functions/${fn.metadata.name}`, (data, status) => {
+                        that.editor.setValue(atob(data.code));
+                    });
+                });
+
+                // update able
+                $('#node-input-readonly').change((e) => {
+                    const readonly = e.target.checked;
+                    $('.fission-func-readonly').prop('disabled', readonly);
+                    that.editor.setOption('readOnly', readonly);
+                    if (readonly) {
+                        that.editor.container.classList.add("ace_read-only");
+                    } else {
+                        that.editor.container.classList.remove("ace_read-only");
+                    }
+                    if (!that.funcname) {
+                        that.createnew = true;
+                        $('.fission-func-old-field').hide();
+                        $('.fission-func-new-field').show();
+                    }
+                });
+
+                $('.fission-loading-spinner').hide();
+                $('.fission-container').show();
+            });
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="fission-invocation">
+<div class="form-row">
+    <label for="node-input-name"><i class="icon-tag"></i> Node Name</label>
+    <input type="text" id="node-input-name" placeholder="Node Name">
+</div>
+<div class="form-row">
+    <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
+    <input type="checkbox" id="node-input-errorflow" checked>
+</div>
+<div class="form-row">
+    <label for="node-input-readonly"><i class="icon-tag"></i> Readonly</label>
+    <input type="checkbox" id="node-input-readonly" checked>
+</div>
+<div class="form-row">
+    <label for="node-input-outputs">
+        <i class="fa fa-random"></i>
+        Outputs
+    </label>
+    <input id="node-input-outputs" style="width: 60px;" value=1>
+</div>
+<div class="fission-container">
+    <div class="form-row fission-func-old-field">
+        <label for="node-input-funcname"><i class="icon-tag"></i> Function</label>
+        <select id="node-input-funcname">
+            <option value="">-</option>
+        </select>
+    </div>
+    <div class="form-row fission-func-old-field">
+        <label for="node-input-funcuid"><i class="icon-tag"></i> Uid</label>
+        <input type="text" id="node-input-funcuid" placeholder="Uid" disabled>
+    </div>
+    <div class="form-row fission-func-new-field">
+        <label for="node-input-newname"><i class="icon-tag"></i> Function</label>
+        <input type="text" id="node-input-newname" class="fission-func-readonly" placeholder="Function" disabled>
+    </div>
+    <div class="form-row">
+        <label for="node-input-environment"><i class="icon-tag"></i> Environment</label>
+        <select id="node-input-environment" class="fission-func-readonly" disabled>
+            <option value="">-</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceinstances"><i class="icon-tag"></i> Svc Instances</label>
+        <input type="text" id="node-input-serviceinstances" class="fission-func-readonly" placeholder="Service Instances" disabled>
+    </div>
+    <div class="form-row" style="margin-bottom: 0px;">
+        <label for="node-input-code"><i class="fa fa-wrench"></i> Code</label>
+        <input type="hidden" id="node-input-code" autofocus="autofocus">
+    </div>
+    <div class="form-row node-text-editor-row">
+        <div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-func-editor" ></div>
+    </div>
+        <div class="form-row">
+        <label for="node-input-cputarget">
+            <i class="fa fa-random"></i>
+            Cpu Target
+        </label>
+        <input id="node-input-cputarget" class="fission-func-readonly" style="width: 60px;" value=60 disabled>
+    </div>
+    <div class="form-row">
+        <label for="node-input-maxinstance">
+            <i class="fa fa-random"></i>
+            Max Instances
+        </label>
+        <input id="node-input-maxinstance" class="fission-func-readonly" style="width: 60px;" value=3 disabled>
+    </div>
+</div>
+
+<span style="position: absolute;left: 0;right: 0;text-align: center" class="fission-loading-spinner hide">
+    <img src="red/images/spin.svg">
+</span>
+
+</script>
+
+<script type="text/x-red" data-help-name="fission-invocation">
+    <p>Nodes that invoke, manager fission functions </p>
+
+</script>
