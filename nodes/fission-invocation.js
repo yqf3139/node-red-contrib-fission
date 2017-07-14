@@ -85,10 +85,9 @@ module.exports = function (RED) {
                 node.send(buildMsgs(msg, response, false));
             }).catch((err) => {
                 node.status({fill: "red", shape: "dot", text: "an invocation failed"});
-                node.error(`invoke fission func [${node.funcname}] failed, with error: ${err.responseText}`);
+                node.error(`invoke fission func [${node.funcname}] failed, with error: ${err}`);
                 node.send(buildMsgs(msg, err.response, true));
             });
-
         });
         node.on('close', function () {
             // tidy up any state

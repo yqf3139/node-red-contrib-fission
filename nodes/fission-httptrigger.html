@@ -1,0 +1,153 @@
+<!--
+  Copyright JS Foundation and other contributors, http://js.foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/x-red" data-template-name="fission-httptrigger">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-method"><i class="fa fa-tasks"></i> Method</label>
+        <select type="text" id="node-input-method" style="width:70%;">
+        <option value="get">GET</option>
+        <option value="post">POST</option>
+        <option value="put">PUT</option>
+        <option value="delete">DELETE</option>
+        </select>
+    </div>
+    <div class="form-row form-row-http-in-upload hide">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-upload" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-upload" style="width: 70%;"> Upload</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-url"><i class="fa fa-globe"></i> URL</label>
+        <input id="node-input-url" type="text" placeholder="/url">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="fission-httptrigger">
+    <p>Creates an HTTP end-point for creating web services.</p>
+</script>
+
+<script type="text/javascript">
+    (function () {
+        const controller = '/proxy/fission-controller';
+        const router = '/proxy/fission-router';
+
+        function createTrigger(context) {
+            return {
+                metadata: {
+                    name: context.id,
+                },
+                urlpattern: context.url,
+                method: context.method,
+                flow: {
+                    name: context.id,
+                }
+            }
+        }
+
+        function postTrigger(context) {
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/triggers/http`,
+                data: JSON.stringify(createTrigger(context)),
+                dataType: "json",
+                success: function (msg) {
+                    console.log('Create trigger success,', msg);
+                    RED.notify(`Fission trigger [${context.id}] created`, "success");
+                },
+                error: function (err) {
+                    console.error(err);
+                    RED.notify(err.responseText, "error");
+                }
+            });
+        }
+
+        function deleteTrigger(context, cb) {
+            $.ajax({
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/triggers/http/${context.id}`,
+                success: function (msg) {
+                    console.log('Delete trigger success,', msg);
+                    if(cb) cb(context);
+                },
+                error: function (err) {
+                    console.error(err);
+                    if(cb) cb(context);
+                }
+            });
+        }
+
+        RED.nodes.registerType('fission-httptrigger', {
+            category: 'input',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                url: {value: "", required: true},
+                method: {value: "get", required: true},
+                upload: {value: false},
+            },
+            inputs: 0,
+            outputs: 1,
+            icon: "white-globe.png",
+            label: function () {
+                if (this.name) {
+                    return this.name;
+                } else if (this.url) {
+                    let root = '';
+                    if (root.slice(-1) !== "/") {
+                        root = root + "/";
+                    }
+                    if (this.url.charAt(0) === "/") {
+                        root += this.url.slice(1);
+                    } else {
+                        root += this.url;
+                    }
+                    return "[" + this.method + "] " + root;
+                } else {
+                    return "http";
+                }
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: function () {
+                $("#node-input-method").change(function () {
+                    if ($(this).val() === "post") {
+                        $(".form-row-http-in-upload").show();
+                    } else {
+                        $(".form-row-http-in-upload").hide();
+                    }
+                });
+            },
+            oneditdelete: function () {
+                deleteTrigger(this, null);
+            },
+            oneditsave: function () {
+                const that = this;
+                // create new fission http trigger
+                setTimeout(() => {
+                    console.log(that);
+                    deleteTrigger(that, postTrigger);
+                }, 200);
+            }
+        });
+    })();
+</script>
