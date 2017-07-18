@@ -3,11 +3,13 @@ const axios = require('axios');
 const OutClusterConfig = {
     controller: 'http://cluster.me:31313',
     router: 'http://cluster.me:31314',
+    catalog: 'http://cluster.me:30080',
 };
 
 const InClusterConfig = {
     controller: 'http://cluster.me:31313',
     router: 'http://cluster.me:31314',
+    catalog: 'http://cluster.me:30080',
 };
 
 /**
@@ -156,6 +158,7 @@ Api.prototype.postTriggerTimer = function (item) {
 
 module.exports = {
     Api,
+    checkStatus,
     OutClusterConfig,
     InClusterConfig,
 };

@@ -1,0 +1,411 @@
+<!--
+  Copyright JS Foundation and other contributors, http://js.foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/x-red" data-template-name="fission-rethinkdb-adapter">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-autoresp" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-autoresp" style="width: 70%;"> Auto Response</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="rethinkdb" value="rethinkdb">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-database"><i class="fa fa-globe"></i> Database</label>
+        <input id="node-input-database" type="text" placeholder="database name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-table"><i class="fa fa-globe"></i> Table</label>
+        <input id="node-input-table" type="text" placeholder="table">
+    </div>
+    <div class="form-row">
+        <label for="node-input-key"><i class="fa fa-globe"></i> Key</label>
+        <input id="node-input-key" type="text" placeholder="key">
+    </div>
+    <div class="form-row">
+        <label for="node-input-value"><i class="fa fa-globe"></i> Value</label>
+        <input id="node-input-value" type="text" placeholder="value">
+    </div>
+
+</script>
+
+
+<script type="text/x-red" data-template-name="fission-rethinkdb-put">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="rethinkdb" value="rethinkdb">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-database"><i class="fa fa-globe"></i> Database</label>
+        <input id="node-input-database" type="text" placeholder="database name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-table"><i class="fa fa-globe"></i> Table</label>
+        <input id="node-input-table" type="text" placeholder="table">
+    </div>
+
+</script>
+
+<script type="text/x-red" data-template-name="fission-rethinkdb-get">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
+        <input type="checkbox" id="node-input-errorflow" checked>
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputs"><i class="fa fa-random"></i> Outputs</label>
+        <input id="node-input-outputs" style="width: 60px;" value=1>
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="rethinkdb" value="rethinkdb">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-database"><i class="fa fa-globe"></i> Database</label>
+        <input id="node-input-database" type="text" placeholder="database name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-table"><i class="fa fa-globe"></i> Table</label>
+        <input id="node-input-table" type="text" placeholder="table">
+    </div>
+    <div class="form-row">
+        <label for="node-input-key"><i class="fa fa-globe"></i> Key</label>
+        <input id="node-input-key" type="text" placeholder="key">
+    </div>
+    <div class="form-row">
+        <label for="node-input-value"><i class="fa fa-globe"></i> Value</label>
+        <input id="node-input-value" type="text" placeholder="value">
+    </div>
+
+</script>
+
+<script type="text/x-red" data-help-name="fission-rethinkdb-adapter">
+    <p>Creates a Rethinkdb adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/x-red" data-help-name="fission-rethinkdb-put">
+    <p>Creates a Rethinkdb adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/x-red" data-help-name="fission-rethinkdb-get">
+    <p>Creates a Rethinkdb adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/javascript">
+    (function () {
+        "use strict";
+        const controller = '/proxy/fission-controller';
+        const router = '/proxy/fission-router';
+        const catalog = '/proxy/fission-catalog';
+
+        let instanceNameToId = {};
+
+        function createAdapter(context) {
+            return {
+                metadata: {
+                    name: context.id,
+                },
+                instancename: context.instancename,
+                spec: {
+                    database: context.database,
+                    table: context.table,
+                    key: context.key || '',
+                    value: context.value || '',
+                }
+            }
+        }
+
+        function createTrigger(context) {
+            return {
+                metadata: {
+                    name: context.id,
+                },
+                topic: `fission.service-adapter.rethinkdb.${context.id}`,
+                mqtype: 'nats-streaming',
+                flow: {
+                    name: context.id,
+                }
+            }
+        }
+
+        function postAdapter(context) {
+            if (!context.instancename || !context.database || !context.table) {
+                console.warn('missing params instancename, database or table');
+                return;
+            }
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/service-adapters`,
+                data: JSON.stringify(createAdapter(context)),
+                dataType: "json",
+                success: function (msg) {
+                    console.log('Create adapter success,', msg);
+                    RED.notify(`Fission adapter [${context.id}] created`, "success");
+                },
+                error: function (err) {
+                    console.error(err);
+                    RED.notify(err.responseText, "error");
+                }
+            });
+        }
+
+        function postTrigger(context) {
+            if (!context.instancename || !context.database || !context.table) {
+                console.warn('missing params instancename, database or table');
+                return;
+            }
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/triggers/messagequeue`,
+                data: JSON.stringify(createTrigger(context)),
+                dataType: "json",
+                success: function (msg) {
+                    console.log('Create trigger success,', msg);
+                    RED.notify(`Fission trigger [${context.id}] created`, "success");
+                },
+                error: function (err) {
+                    console.error(err);
+                    RED.notify(err.responseText, "error");
+                }
+            });
+        }
+
+        function deleteAdapter(context, cb) {
+            $.ajax({
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/service-adapters/${context.id}`,
+                success: function (msg) {
+                    console.log('Delete adapter success,', msg);
+                    if (cb) cb(context);
+                },
+                error: function (err) {
+                    console.error(err);
+                    if (cb) cb(context);
+                }
+            });
+        }
+
+        function deleteTrigger(context, cb) {
+            $.ajax({
+                type: "DELETE",
+                contentType: "application/json; charset=utf-8",
+                url: `${controller}/v1/triggers/messagequeue/${context.id}`,
+                success: function (msg) {
+                    console.log('Delete trigger success,', msg);
+                    if (cb) cb(context);
+                },
+                error: function (err) {
+                    console.error(err);
+                    if (cb) cb(context);
+                }
+            });
+        }
+
+        function loadInstanceList(serviceclass, insList) {
+            $.get(`${catalog}/apis/servicecatalog.k8s.io/v1alpha1/namespaces/fission/instances`, (data, status) => {
+                if (status === 'success') {
+                    console.log(data);
+                    instanceNameToId = {};
+                    const instancenames = data.items.filter((item) => {
+                        instanceNameToId[item.metadata.name] = item.spec.externalID;
+                        return item.spec.serviceClassName === serviceclass;
+                    }).map((item) => item.metadata.name);
+
+                    insList.empty();
+                    // fill in instance list
+                    instancenames.map((name) => {
+                        $(`<option value='${name}'>${name}</option>`).appendTo(insList);
+                    });
+                } else {
+                    console.error(data);
+                }
+            })
+        }
+
+        function onEditPrepare() {
+            const insList = $('#node-input-instancename');
+            const serviceclass = $('#node-input-serviceclass');
+            loadInstanceList(serviceclass.val() || 'rethinkdb', insList);
+
+            // if the service class changed, reload instance list
+            serviceclass.change((e) => {
+                const classname = e.target.value;
+                if (!classname) return;
+                loadInstanceList(classname, insList);
+            })
+        }
+
+        function onEditSave(that) {
+            // update the service instances of the backend function if needed
+            setTimeout(() => {
+                console.log(that);
+
+                $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
+                    if (data.serviceInstances.some((i) => i === that.instancename)) {
+                        return;
+                    }
+                    data.serviceInstances.push(that.instancename);
+                    $.ajax({
+                        type: "PUT",
+                        contentType: "application/json; charset=utf-8",
+                        url: `${controller}/v1/functions/${that.funcname}`,
+                        data: JSON.stringify(data),
+                        dataType: "json",
+                        success: function (msg) {
+                            console.log('Update function success,', msg);
+                            RED.notify(`Fission function [${that.funcname}] updated`, "success");
+                        },
+                        error: function (err) {
+                            console.error(err);
+                            RED.notify(err.responseText, "error");
+                        }
+                    });
+                });
+
+            }, 200);
+        }
+
+        RED.nodes.registerType('fission-rethinkdb-adapter', {
+            category: 'input',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                autoresp: {value: true},
+                serviceclass: {value: "rethinkdb", required: true},
+                instancename: {value: "", required: true},
+                database: {value: "", required: true},
+                table: {value: "", required: true},
+                key: {value: ""},
+                value: {value: ""},
+            },
+            inputs: 0,
+            outputs: 1,
+            icon: "db.png",
+            label: function () {
+                return this.name || this.instancename || 'rethinkdb-adapter';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditdelete: function () {
+                deleteAdapter(this, null);
+            },
+            oneditsave: function () {
+                const that = this;
+                // create new fission rethinkdb adapter
+                // create new fission rethinkdb nats streaming trigger
+                setTimeout(() => {
+                    console.log(that);
+                    deleteAdapter(that, postAdapter);
+                    deleteTrigger(that, postTrigger);
+                }, 200);
+            }
+        });
+
+        RED.nodes.registerType('fission-rethinkdb-put', {
+            category: 'output',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                serviceclass: {value: "rethinkdb", required: true},
+                instancename: {value: "", required: true},
+                database: {value: "", required: true},
+                table: {value: "", required: true},
+                key: {value: ""},
+                value: {value: ""},
+                funcname: {value: "std.rethinkdb.put"},
+            },
+            inputs: 1,
+            outputs: 0,
+            icon: "db.png",
+            label: function () {
+                return this.name || this.bucket || 'rethinkdb-put';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditsave: function () {
+                onEditSave(this);
+            },
+        });
+
+        RED.nodes.registerType('fission-rethinkdb-get', {
+            category: 'function',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                serviceclass: {value: "rethinkdb", required: true},
+                instancename: {value: "", required: true},
+                database: {value: "", required: true},
+                table: {value: "", required: true},
+                key: {value: ""},
+                value: {value: ""},
+                funcname: {value: "std.rethinkdb.get"},
+
+                errorflow: {value: true},
+                outputs: {value: 2},
+            },
+            inputs: 1,
+            outputs: 2,
+            icon: "db.png",
+            label: function () {
+                return this.name || this.bucket || 'rethinkdb-get';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditsave: function () {
+                onEditSave(this);
+            },
+        });
+    })();
+</script>

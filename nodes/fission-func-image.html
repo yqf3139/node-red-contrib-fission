@@ -1,0 +1,142 @@
+<!--
+  Copyright JS Foundation and other contributors, http://js.foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/x-red" data-template-name="fission-func-image">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
+        <input type="checkbox" id="node-input-errorflow" checked>
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputs"><i class="fa fa-random"></i> Outputs</label>
+        <input id="node-input-outputs" style="width: 60px;" value=1>
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="func-image" value="func-image">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="fission-func-image">
+    <p>Creates a Image adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/javascript">
+    (function () {
+        "use strict";
+        const controller = '/proxy/fission-controller';
+        const router = '/proxy/fission-router';
+        const catalog = '/proxy/fission-catalog';
+
+        function loadInstanceList(serviceclass, insList) {
+            $.get(`${catalog}/apis/servicecatalog.k8s.io/v1alpha1/namespaces/fission/instances`, (data, status) => {
+                if (status === 'success') {
+                    console.log(data);
+                    const instancenames = data.items.filter((item) => {
+                        return item.spec.serviceClassName === serviceclass;
+                    }).map((item) => item.metadata.name);
+
+                    insList.empty();
+                    // fill in instance list
+                    instancenames.map((name) => {
+                        $(`<option value='${name}'>${name}</option>`).appendTo(insList);
+                    });
+                } else {
+                    console.error(data);
+                }
+            })
+        }
+
+        function onEditPrepare() {
+            const insList = $('#node-input-instancename');
+            const serviceclass = $('#node-input-serviceclass');
+            loadInstanceList(serviceclass.val() || 'minio', insList);
+
+            // if the service class changed, reload instance list
+            serviceclass.change((e) => {
+                const classname = e.target.value;
+                if (!classname) return;
+                loadInstanceList(classname, insList);
+            })
+        }
+
+        function onEditSave(that) {
+            // update the service instances of the backend function if needed
+            setTimeout(() => {
+                console.log(that);
+
+                $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
+                    if (data.serviceInstances.some((i) => i === that.instancename)) {
+                        return;
+                    }
+                    data.serviceInstances.push(that.instancename);
+                    $.ajax({
+                        type: "PUT",
+                        contentType: "application/json; charset=utf-8",
+                        url: `${controller}/v1/functions/${that.funcname}`,
+                        data: JSON.stringify(data),
+                        dataType: "json",
+                        success: function (msg) {
+                            console.log('Update function success,', msg);
+                            RED.notify(`Fission function [${that.funcname}] updated`, "success");
+                        },
+                        error: function (err) {
+                            console.error(err);
+                            RED.notify(err.responseText, "error");
+                        }
+                    });
+                });
+
+            }, 200);
+        }
+
+        RED.nodes.registerType('fission-func-image', {
+            category: 'function',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                serviceclass: {value: "minio", required: true},
+                instancename: {value: "", required: true},
+                funcname: {value: "std.image.convert"},
+
+                errorflow: {value: true},
+                outputs: {value: 2},
+            },
+            inputs: 1,
+            outputs: 2,
+            icon: "function.png",
+            label: function () {
+                return this.name || 'func-image';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditsave: function () {
+                onEditSave(this);
+            },
+        });
+    })();
+</script>

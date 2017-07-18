@@ -3,6 +3,7 @@ module.exports = function (RED) {
 
     const Proxy = require('express-http-proxy');
     const Api = require('../fission/api');
+    const Common = require('../fission/common');
     const Url = require('url');
     const api = new Api.Api(Api.InClusterConfig);
 
@@ -16,38 +17,9 @@ module.exports = function (RED) {
 
         node.aliveRequests = 0;
 
-        function fillMsg(msg, response) {
-            msg.payload = Object.assign({}, response.data);
-            msg.headers = response.headers;
-            msg.statusCode = response.status;
-            msg.statusText = response.statusText;
-        }
-
-        function buildMsgs(msg, response, isErr) {
-            const body = response.data;
-            if (node.outputs === 1) {
-                fillMsg(msg, response);
-                return msg;
-            }
-            if (node.errorflow && node.outputs === 2) {
-                fillMsg(msg, response);
-                return isErr ? [null, msg] : [msg, null];
-            }
-            if (Array.isArray(body) && body.length === node.outputs) {
-                // if response size matches outputs
-                return body.map((r) => {
-                    const m = Object.assign({}, msg);
-                    fillMsg(m, r);
-                    return m;
-                });
-            }
-            // if not, duplicate responses into msg
-            return new Array(node.outputs).fill(0).map(() => {
-                const m = Object.assign({}, msg);
-                fillMsg(m, response);
-                return m;
-            });
-        }
+        const buildMsgs = function(msg, response, isErr) {
+            return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
+        };
 
         node.on('input', function (msg) {
             console.log(msg);
@@ -84,6 +56,7 @@ module.exports = function (RED) {
                 }
                 node.send(buildMsgs(msg, response, false));
             }).catch((err) => {
+                node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed"});
                 node.error(`invoke fission func [${node.funcname}] failed, with error: ${err}`);
                 node.send(buildMsgs(msg, err.response, true));
@@ -97,17 +70,19 @@ module.exports = function (RED) {
     RED.nodes.registerType("fission-invocation", FissionInvocation);
 
     // set up a proxy server to fission controller and router for frontend
-    const controllerProxy = Proxy(Api.InClusterConfig.controller, {
-        proxyReqPathResolver: function (req) {
-            return Url.parse(req.originalUrl).path.replace('/proxy/fission-controller', '');
-        }
-    });
-    const routerProxy = Proxy(Api.InClusterConfig.router, {
-        proxyReqPathResolver: function (req) {
-            return Url.parse(req.originalUrl).path.replace('/proxy/fission-router', '');
-        }
-    });
+    function makeProxy(backend, prefix) {
+        return Proxy(backend, {
+            proxyReqPathResolver: function (req) {
+                return Url.parse(req.originalUrl).path.replace(prefix, '');
+            }
+        });
+    }
+
+    const controllerProxy = makeProxy(Api.InClusterConfig.controller, '/proxy/fission-controller');
+    const routerProxy = makeProxy(Api.InClusterConfig.router, '/proxy/fission-router');
+    const catalogProxy = makeProxy(Api.InClusterConfig.catalog, '/proxy/fission-catalog');
 
     RED.httpNode.use("/proxy/fission-controller/*", controllerProxy);
     RED.httpNode.use("/proxy/fission-router/*", routerProxy);
+    RED.httpNode.use("/proxy/fission-catalog/*", catalogProxy);
 };

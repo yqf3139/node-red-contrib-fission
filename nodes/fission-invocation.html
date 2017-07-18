@@ -223,18 +223,17 @@
                     });
 
                     // select func and env
-                    console.log('preselect', this);
-                    envList.val(this.environment || '');
-                    fnList.val(this.funcname || '');
+                    envList.val(that.environment || '');
+                    fnList.val(that.funcname || '');
                     if (this.funcname) {
                         // select ace editor mode
-                        const mode = envToAceMode[this.environment];
+                        const mode = envToAceMode[that.environment];
                         if (mode) {
                             that.editor.getSession().setMode(mode);
                         }
 
                         // get the code
-                        $.get(`${controller}/v1/functions/${this.funcname}`, (data, status) => {
+                        $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
                             that.editor.setValue(atob(data.code));
                         });
                     }
@@ -253,7 +252,7 @@
                         $('#node-input-serviceinstances').val(fn.serviceInstances.join(','));
 
                         // select ace editor mode
-                        const mode = envToAceMode[this.environment];
+                        const mode = envToAceMode[that.environment];
                         if (mode) {
                             that.editor.getSession().setMode(mode);
                         }

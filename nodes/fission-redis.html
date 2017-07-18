@@ -1,0 +1,318 @@
+<!--
+  Copyright JS Foundation and other contributors, http://js.foundation
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<script type="text/x-red" data-template-name="fission-redis">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
+        <input type="checkbox" id="node-input-errorflow" checked>
+    </div>
+    <div class="form-row">
+        <label for="node-input-outputs"><i class="fa fa-random"></i> Outputs</label>
+        <input id="node-input-outputs" style="width: 60px;" value=1>
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="redis" value="redis">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-globe"></i> Command</label>
+        <select id="node-input-command">
+            <option value="append">APPEND</option>
+            <option value="asking">ASKING</option>
+            <option value="auth">AUTH</option>
+            <option value="bgrewriteaof">BGREWRITEAOF</option>
+            <option value="bgsave">BGSAVE</option>
+            <option value="bitcount">BITCOUNT</option>
+            <option value="bitop">BITOP</option>
+            <option value="bitpos">BITPOS</option>
+            <option value="blpop">BLPOP</option>
+            <option value="brpop">BRPOP</option>
+            <option value="brpoplpush">BRPOPLPUSH</option>
+            <option value="client">CLIENT</option>
+            <option value="cluster">CLUSTER</option>
+            <option value="command">COMMAND</option>
+            <option value="config">CONFIG</option>
+            <option value="dbsize">DBSIZE</option>
+            <option value="debug">DEBUG</option>
+            <option value="decr">DECR</option>
+            <option value="decrby">DECRBY</option>
+            <option value="del">DEL</option>
+            <option value="discard">DISCARD</option>
+            <option value="dump">DUMP</option>
+            <option value="echo">ECHO</option>
+            <option value="eval">EVAL</option>
+            <option value="evalsha">EVALSHA</option>
+            <option value="exec">EXEC</option>
+            <option value="exists">EXISTS</option>
+            <option value="expire">EXPIRE</option>
+            <option value="expireat">EXPIREAT</option>
+            <option value="flushall">FLUSHALL</option>
+            <option value="flushdb">FLUSHDB</option>
+            <option value="geoadd">GEOADD</option>
+            <option value="geodist">GEODIST</option>
+            <option value="geohash">GEOHASH</option>
+            <option value="geopos">GEOPOS</option>
+            <option value="georadius">GEORADIUS</option>
+            <option value="georadiusbymember">GEORADIUSBYMEMBER</option>
+            <option value="get">GET</option>
+            <option value="getbit">GETBIT</option>
+            <option value="getrange">GETRANGE</option>
+            <option value="getset">GETSET</option>
+            <option value="hdel">HDEL</option>
+            <option value="hexists">HEXISTS</option>
+            <option value="hget">HGET</option>
+            <option value="hgetall">HGETALL</option>
+            <option value="hincrby">HINCRBY</option>
+            <option value="hincrbyfloat">HINCRBYFLOAT</option>
+            <option value="hkeys">HKEYS</option>
+            <option value="hlen">HLEN</option>
+            <option value="hmget">HMGET</option>
+            <option value="hmset">HMSET</option>
+            <option value="hscan">HSCAN</option>
+            <option value="hset">HSET</option>
+            <option value="hsetnx">HSETNX</option>
+            <option value="hstrlen">HSTRLEN</option>
+            <option value="hvals">HVALS</option>
+            <option value="incr">INCR</option>
+            <option value="incrby">INCRBY</option>
+            <option value="incrbyfloat">INCRBYFLOAT</option>
+            <option value="info">INFO</option>
+            <option value="keys">KEYS</option>
+            <option value="lastsave">LASTSAVE</option>
+            <option value="latency">LATENCY</option>
+            <option value="lindex">LINDEX</option>
+            <option value="linsert">LINSERT</option>
+            <option value="llen">LLEN</option>
+            <option value="lpop">LPOP</option>
+            <option value="lpush">LPUSH</option>
+            <option value="lpushx">LPUSHX</option>
+            <option value="lrange">LRANGE</option>
+            <option value="lrem">LREM</option>
+            <option value="lset">LSET</option>
+            <option value="ltrim">LTRIM</option>
+            <option value="mget">MGET</option>
+            <option value="migrate">MIGRATE</option>
+            <option value="monitor">MONITOR</option>
+            <option value="move">MOVE</option>
+            <option value="mset">MSET</option>
+            <option value="msetnx">MSETNX</option>
+            <option value="multi">MULTI</option>
+            <option value="object">OBJECT</option>
+            <option value="persist">PERSIST</option>
+            <option value="pexpire">PEXPIRE</option>
+            <option value="pexpireat">PEXPIREAT</option>
+            <option value="pfadd">PFADD</option>
+            <option value="pfcount">PFCOUNT</option>
+            <option value="pfdebug">PFDEBUG</option>
+            <option value="pfmerge">PFMERGE</option>
+            <option value="pfselftest">PFSELFTEST</option>
+            <option value="ping">PING</option>
+            <option value="psetex">PSETEX</option>
+            <option value="psubscribe">PSUBSCRIBE</option>
+            <option value="psync">PSYNC</option>
+            <option value="pttl">PTTL</option>
+            <option value="publish">PUBLISH</option>
+            <option value="pubsub">PUBSUB</option>
+            <option value="punsubscribe">PUNSUBSCRIBE</option>
+            <option value="randomkey">RANDOMKEY</option>
+            <option value="readonly">READONLY</option>
+            <option value="readwrite">READWRITE</option>
+            <option value="rename">RENAME</option>
+            <option value="renamenx">RENAMENX</option>
+            <option value="replconf">REPLCONF</option>
+            <option value="restore">RESTORE</option>
+            <option value="restore-asking">RESTORE-ASKING</option>
+            <option value="role">ROLE</option>
+            <option value="rpop">RPOP</option>
+            <option value="rpoplpush">RPOPLPUSH</option>
+            <option value="rpush">RPUSH</option>
+            <option value="rpushx">RPUSHX</option>
+            <option value="sadd">SADD</option>
+            <option value="save">SAVE</option>
+            <option value="scan">SCAN</option>
+            <option value="scard">SCARD</option>
+            <option value="script">SCRIPT</option>
+            <option value="sdiff">SDIFF</option>
+            <option value="sdiffstore">SDIFFSTORE</option>
+            <option value="select">SELECT</option>
+            <option value="set">SET</option>
+            <option value="setbit">SETBIT</option>
+            <option value="setex">SETEX</option>
+            <option value="setnx">SETNX</option>
+            <option value="setrange">SETRANGE</option>
+            <option value="shutdown">SHUTDOWN</option>
+            <option value="sinter">SINTER</option>
+            <option value="sinterstore">SINTERSTORE</option>
+            <option value="sismember">SISMEMBER</option>
+            <option value="slaveof">SLAVEOF</option>
+            <option value="slowlog">SLOWLOG</option>
+            <option value="smembers">SMEMBERS</option>
+            <option value="smove">SMOVE</option>
+            <option value="sort">SORT</option>
+            <option value="spop">SPOP</option>
+            <option value="srandmember">SRANDMEMBER</option>
+            <option value="srem">SREM</option>
+            <option value="sscan">SSCAN</option>
+            <option value="strlen">STRLEN</option>
+            <option value="subscribe">SUBSCRIBE</option>
+            <option value="substr">SUBSTR</option>
+            <option value="sunion">SUNION</option>
+            <option value="sunionstore">SUNIONSTORE</option>
+            <option value="sync">SYNC</option>
+            <option value="time">TIME</option>
+            <option value="ttl">TTL</option>
+            <option value="type">TYPE</option>
+            <option value="unsubscribe">UNSUBSCRIBE</option>
+            <option value="unwatch">UNWATCH</option>
+            <option value="wait">WAIT</option>
+            <option value="watch">WATCH</option>
+            <option value="zadd">ZADD</option>
+            <option value="zcard">ZCARD</option>
+            <option value="zcount">ZCOUNT</option>
+            <option value="zincrby">ZINCRBY</option>
+            <option value="zinterstore">ZINTERSTORE</option>
+            <option value="zlexcount">ZLEXCOUNT</option>
+            <option value="zrange">ZRANGE</option>
+            <option value="zrangebylex">ZRANGEBYLEX</option>
+            <option value="zrangebyscore">ZRANGEBYSCORE</option>
+            <option value="zrank">ZRANK</option>
+            <option value="zrem">ZREM</option>
+            <option value="zremrangebylex">ZREMRANGEBYLEX</option>
+            <option value="zremrangebyrank">ZREMRANGEBYRANK</option>
+            <option value="zremrangebyscore">ZREMRANGEBYSCORE</option>
+            <option value="zrevrange">ZREVRANGE</option>
+            <option value="zrevrangebylex">ZREVRANGEBYLEX</option>
+            <option value="zrevrangebyscore">ZREVRANGEBYSCORE</option>
+            <option value="zrevrank">ZREVRANK</option>
+            <option value="zscan">ZSCAN</option>
+            <option value="zscore">ZSCORE</option>
+            <option value="zunionstore">ZUNIONSTORE</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="fission-redis">
+    <p>Creates a Redis adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/javascript">
+    (function () {
+        "use strict";
+        const controller = '/proxy/fission-controller';
+        const router = '/proxy/fission-router';
+        const catalog = '/proxy/fission-catalog';
+
+        function loadInstanceList(serviceclass, insList) {
+            $.get(`${catalog}/apis/servicecatalog.k8s.io/v1alpha1/namespaces/fission/instances`, (data, status) => {
+                if (status === 'success') {
+                    console.log(data);
+                    const instancenames = data.items.filter((item) => {
+                        return item.spec.serviceClassName === serviceclass;
+                    }).map((item) => item.metadata.name);
+
+                    insList.empty();
+                    // fill in instance list
+                    instancenames.map((name) => {
+                        $(`<option value='${name}'>${name}</option>`).appendTo(insList);
+                    });
+                } else {
+                    console.error(data);
+                }
+            })
+        }
+
+        function onEditPrepare() {
+            const insList = $('#node-input-instancename');
+            const serviceclass = $('#node-input-serviceclass');
+            loadInstanceList(serviceclass.val() || 'redis', insList);
+
+            // if the service class changed, reload instance list
+            serviceclass.change((e) => {
+                const classname = e.target.value;
+                if (!classname) return;
+                loadInstanceList(classname, insList);
+            })
+        }
+
+        function onEditSave(that) {
+            // update the service instances of the backend function if needed
+            setTimeout(() => {
+                console.log(that);
+
+                $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
+                    if (data.serviceInstances.some((i) => i === that.instancename)) {
+                        return;
+                    }
+                    data.serviceInstances.push(that.instancename);
+                    $.ajax({
+                        type: "PUT",
+                        contentType: "application/json; charset=utf-8",
+                        url: `${controller}/v1/functions/${that.funcname}`,
+                        data: JSON.stringify(data),
+                        dataType: "json",
+                        success: function (msg) {
+                            console.log('Update function success,', msg);
+                            RED.notify(`Fission function [${that.funcname}] updated`, "success");
+                        },
+                        error: function (err) {
+                            console.error(err);
+                            RED.notify(err.responseText, "error");
+                        }
+                    });
+                });
+
+            }, 200);
+        }
+
+        RED.nodes.registerType('fission-redis', {
+            category: 'function',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                serviceclass: {value: "redis", required: true},
+                instancename: {value: "", required: true},
+                command: {value: "", required: true},
+                funcname: {value: "std.redis.cmd"},
+
+                errorflow: {value: true},
+                outputs: {value: 2},
+            },
+            inputs: 1,
+            outputs: 2,
+            icon: "redis.png",
+            label: function () {
+                return this.name || this.command || 'redis';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditsave: function () {
+                onEditSave(this);
+            },
+        });
+    })();
+</script>

@@ -1,0 +1,74 @@
+<script type="text/javascript">
+    RED.nodes.registerType('mailgun-config',{
+        category: 'config',
+        defaults: {
+            name: {value:"",required:true},
+            domain: {value:"",required:true},
+            apikey: {value:"",required:true},
+            from: {value:"",required:true},
+            to: {value:"",required:true},
+        },
+        label: function() {
+            return this.name || "mailgun config";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="mailgun-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="icon-bookmark"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-domain"><i class="icon-bookmark"></i> Domain</label>
+        <input type="text" id="node-config-input-domain">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-apikey"><i class="icon-bookmark"></i> Api Key</label>
+        <input type="text" id="node-config-input-apikey">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-from"><i class="icon-bookmark"></i> From</label>
+        <input type="text" id="node-config-input-from">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-to"><i class="icon-bookmark"></i> To</label>
+        <input type="text" id="node-config-input-to">
+    </div>
+</script>
+
+<script type="text/x-red" data-template-name="mailgun">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-config"><i class="fa fa-tag"></i> Config</label>
+        <input type="text" id="node-input-config">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="mailgun">
+    <p>Creates a Mailgun sender for creating web services.</p>
+</script>
+
+<script type="text/javascript">
+    (function () {
+        "use strict";
+
+        RED.nodes.registerType('mailgun', {
+            category: 'output',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                config: {value: "", type: "mailgun-config"}
+            },
+            inputs: 1,
+            outputs: 0,
+            icon: "envelope.png",
+            label: function () {
+                return this.name || 'email via gun';
+            }
+        });
+    })();
+</script>

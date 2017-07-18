@@ -14,23 +14,54 @@
   limitations under the License.
 -->
 
-<script type="text/x-red" data-template-name="fission-timetrigger">
+<script type="text/x-red" data-template-name="fission-natstrigger">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-cron"><i class="fa fa-globe"></i> Cron</label>
-        <input id="node-input-cron" type="text" placeholder="0 30 * * * | @every5m | @hourly">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-autoresp" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-autoresp" style="width: 70%;"> Auto Response</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-mqtype"><i class="fa fa-tasks"></i> MQ Type</label>
+        <select type="text" id="node-input-mqtype" style="width:70%;">
+        <option value="nats-streaming">NATS Streaming</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-globe"></i> Topic</label>
+        <input id="node-input-topic" type="text" placeholder="foo.bar">
+    </div>
+    <div class="form-row">
+        <label for="node-input-resptopic"><i class="fa fa-globe"></i> Resp Topic</label>
+        <input id="node-input-resptopic" type="text" placeholder="foo.bar.resp">
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="fission-timetrigger">
-    <p>Creates an Timer end-point for creating web services.</p>
+<script type="text/x-red" data-template-name="fission-natspublisher">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="fa fa-globe"></i> Topic</label>
+        <input id="node-input-topic" type="text" placeholder="foo.bar">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="fission-natstrigger">
+    <p>Creates a Nats end-point for creating web services.</p>
+</script>
+
+<script type="text/x-red" data-help-name="fission-natspublisher">
+    <p>Creates a Nats publisher for creating web services.</p>
 </script>
 
 <script type="text/javascript">
     (function () {
+        "use strict";
         const controller = '/proxy/fission-controller';
         const router = '/proxy/fission-router';
 
@@ -39,7 +70,9 @@
                 metadata: {
                     name: context.id,
                 },
-                cron: context.cron,
+                topic: context.topic,
+                resptopic: context.resptopic,
+                mqtype: context.mqtype,
                 flow: {
                     name: context.id,
                 }
@@ -50,7 +83,7 @@
             $.ajax({
                 type: "POST",
                 contentType: "application/json; charset=utf-8",
-                url: `${controller}/v1/triggers/time`,
+                url: `${controller}/v1/triggers/messagequeue`,
                 data: JSON.stringify(createTrigger(context)),
                 dataType: "json",
                 success: function (msg) {
@@ -68,7 +101,7 @@
             $.ajax({
                 type: "DELETE",
                 contentType: "application/json; charset=utf-8",
-                url: `${controller}/v1/triggers/time/${context.id}`,
+                url: `${controller}/v1/triggers/messagequeue/${context.id}`,
                 success: function (msg) {
                     console.log('Delete trigger success,', msg);
                     if(cb) cb(context);
@@ -80,18 +113,21 @@
             });
         }
 
-        RED.nodes.registerType('fission-timetrigger', {
+        RED.nodes.registerType('fission-natstrigger', {
             category: 'input',
             color: "rgb(231, 231, 174)",
             defaults: {
                 name: {value: ""},
-                cron: {value: "", required: true},
+                autoresp: {value: true},
+                topic: {value: "", required: true},
+                mqtype: {value: "nat-streaming", required: true},
+                resptopic: {value: ""},
             },
             inputs: 0,
             outputs: 1,
-            icon: "timer.png",
+            icon: "bridge.png",
             label: function () {
-                return this.name || this.cron || 'timer';
+                return this.name || this.topic || 'natstrigger';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";
@@ -104,12 +140,30 @@
             },
             oneditsave: function () {
                 const that = this;
-                // create new fission time trigger
+                // create new fission messagequeue trigger
                 setTimeout(() => {
                     console.log(that);
                     deleteTrigger(that, postTrigger);
                 }, 200);
             }
+        });
+
+        RED.nodes.registerType('fission-natspublisher', {
+            category: 'output',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                topic: {value: "", required: true},
+            },
+            inputs: 1,
+            outputs: 0,
+            icon: "bridge.png",
+            label: function () {
+                return this.name || this.topic || 'natspulisher';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
         });
     })();
 </script>

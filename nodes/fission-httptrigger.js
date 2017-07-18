@@ -138,7 +138,7 @@ module.exports = function (RED) {
             this.on("close", function () {
                 const node = this;
                 RED.httpNode._router.stack.forEach(function (route, i, routes) {
-                    if (route.route && route.route.path === node.url && route.route.methods[node.method]) {
+                    if (route.route && route.route.path === `/${node.id}`) {
                         routes.splice(i, 1);
                     }
                 });

@@ -18,14 +18,17 @@ module.exports = function (RED) {
     "use strict";
     const bodyParser = require("body-parser");
     const jsonParser = bodyParser.json();
+    const Api = require('../fission/api');
+    const api = new Api.Api(Api.InClusterConfig);
 
-    function FissionTimeTrigger(n) {
+    function FissionNatsTrigger(n) {
         RED.nodes.createNode(this, n);
         if (RED.settings.httpNodeRoot !== false) {
-            if (!n.cron) {
+            if (!n.topic) {
                 return;
             }
             const node = this;
+            node.autoresp = n.autoresp;
 
             this.errorHandler = function (err, req, res, next) {
                 node.warn(err);
@@ -35,8 +38,12 @@ module.exports = function (RED) {
             this.callback = function (req, res) {
                 const msgid = RED.util.generateId();
                 res._msgid = msgid;
-                node.send({_msgid: msgid, payload: req.headers});
-                res.sendStatus(200);
+                if (node.autoresp) {
+                    res.send({});
+                    node.send({_msgid: msgid, req, payload: req.body});
+                } else {
+                    node.send({_msgid: msgid, req, res: {_res: res}, payload: req.body});
+                }
             };
 
             let metricsHandler = function (req, res, next) {
@@ -62,5 +69,36 @@ module.exports = function (RED) {
         }
     }
 
-    RED.nodes.registerType("fission-timetrigger", FissionTimeTrigger);
+    function FissionNatsPublisher(n) {
+        RED.nodes.createNode(this, n);
+        const node = this;
+        node.topic = n.topic;
+        node.aliveRequests = 0;
+        const funcname = 'std.mq.nats-pub';
+
+        node.on('input', function (msg) {
+            const topic = node.topic || msg.topic;
+            if (!topic || !msg.payload) {
+                return;
+            }
+
+            node.aliveRequests += 1;
+            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+
+            api.invokeFunction(funcname, 'POST', {}, {}, {topic, payload: msg.payload}).then((response) => {
+                node.aliveRequests -= 1;
+                if (node.aliveRequests === 0) {
+                    node.status({});
+                } else {
+                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+                }
+            }).catch((err) => {
+                node.status({fill: "red", shape: "dot", text: "an invocation failed"});
+                node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+            });
+        })
+    }
+
+    RED.nodes.registerType("fission-natstrigger", FissionNatsTrigger);
+    RED.nodes.registerType("fission-natspublisher", FissionNatsPublisher);
 };
