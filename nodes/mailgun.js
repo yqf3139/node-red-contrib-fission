@@ -31,7 +31,7 @@ module.exports = function (RED) {
                 return;
             }
             node.aliveRequests += 1;
-            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
 
             const mailgun = mg({apiKey: apikey, domain: domain});
             const data = {
@@ -45,14 +45,15 @@ module.exports = function (RED) {
                 node.aliveRequests -= 1;
                 console.log(body);
                 if (error) {
-                    node.status({fill: "red", shape: "dot", text: "an email not sent"});
+                    node.status({fill: "red", shape: "dot", text: "an email not sent", running: node.aliveRequests > 0});
                     node.error(`invoke mailgun failed, with error: ${error}`);
                     return;
                 }
                 if (node.aliveRequests === 0) {
                     node.status({});
                 } else {
-                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`,
+                        running: node.aliveRequests > 0});
                 }
             });
         })

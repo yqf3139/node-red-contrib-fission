@@ -93,12 +93,18 @@ module.exports = function (RED) {
             this.callback = function (req, res) {
                 const msgid = RED.util.generateId();
                 res._msgid = msgid;
+
+                let token = null;
+                if (req.headers.hasOwnProperty('authorization')) {
+                    token = req.headers['authorization'].replace('Bearer ', '');
+                }
+
                 if (node.method.match(/^(post|delete|put)$/)) {
-                    node.send({_msgid: msgid, req: req, res: {_res: res}, payload: req.body});
+                    node.send({_msgid: msgid, req, res: {_res: res}, payload: req.body, token});
                 } else if (node.method === "get") {
-                    node.send({_msgid: msgid, req: req, res: {_res: res}, payload: req.query});
+                    node.send({_msgid: msgid, req, res: {_res: res}, payload: req.query, token});
                 } else {
-                    node.send({_msgid: msgid, req: req, res: {_res: res}});
+                    node.send({_msgid: msgid, req, res: {_res: res}, token});
                 }
             };
 

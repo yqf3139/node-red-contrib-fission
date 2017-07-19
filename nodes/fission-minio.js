@@ -134,7 +134,7 @@ module.exports = function (RED) {
             }
 
             node.aliveRequests += 1;
-            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
 
             api.invokeFunction(funcname, 'POST', {}, {},
                 {instancename, bucket, filename}).then((response) => {
@@ -144,12 +144,12 @@ module.exports = function (RED) {
                 if (node.aliveRequests === 0) {
                     node.status({});
                 } else {
-                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
                 }
                 node.send(buildMsgs(msg, response, false));
             }).catch((err) => {
                 node.aliveRequests -= 1;
-                node.status({fill: "red", shape: "dot", text: "an invocation failed"});
+                node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
                 node.send(buildMsgs(msg, err.response, true));
             });

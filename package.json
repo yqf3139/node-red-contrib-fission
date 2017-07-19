@@ -43,7 +43,9 @@
       "fission-rethinkdb": "nodes/fission-rethinkdb.js",
       "fission-redis": "nodes/fission-redis.js",
       "fission-mailgun": "nodes/mailgun.js",
-      "fission-func-image": "nodes/fission-func-image.js"
+      "fission-func-image": "nodes/fission-func-image.js",
+      "fission-params-validate": "nodes/fission-params-validate.js",
+      "fission-rate-limit": "nodes/fission-rate-limit.js"
     }
   }
 }
