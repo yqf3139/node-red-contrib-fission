@@ -11,11 +11,11 @@ const OutClusterConfig = {
 };
 
 const InClusterConfig = {
-    controller: 'http://cluster.me:31313',
-    router: 'http://cluster.me:31314',
-    catalog: 'http://cluster.me:30080',
+    controller: 'http://controller.fission',
+    router: 'http://router.fission',
+    catalog: 'http://catalog-catalog-apiserver.catalog',
     influxdb: {
-        host: 'cluster.me',
+        host: 'influxdb.fission',
         port: '31315',
     },
 };
