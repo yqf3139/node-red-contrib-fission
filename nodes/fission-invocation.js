@@ -4,23 +4,30 @@ module.exports = function (RED) {
     const Proxy = require('express-http-proxy');
     const Api = require('../fission/api');
     const Common = require('../fission/common');
+    const FissionLog = require('../fission/log');
     const Url = require('url');
     const api = new Api.Api(Api.InClusterConfig);
+
+    if (!RED.fissionlog) {
+        RED.fissionlog = new FissionLog(RED.comms, Api.InClusterConfig.influxdb, 1000);
+    }
 
     function FissionInvocation(config) {
         RED.nodes.createNode(this, config);
         const node = this;
         node.name = config.name;
         node.funcname = config.funcname;
+        node.funcuid = config.funcuid;
         node.errorflow = config.errorflow;
         node.outputs = parseInt(config.outputs);
 
         node.aliveRequests = 0;
 
-        const buildMsgs = function(msg, response, isErr) {
+        const buildMsgs = function (msg, response, isErr) {
             return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
         };
 
+        RED.fissionlog.add(node.funcname);
         node.on('input', function (msg) {
             let method = 'POST';
             let headers = {};
@@ -50,7 +57,12 @@ module.exports = function (RED) {
                 if (node.aliveRequests === 0) {
                     node.status({});
                 } else {
-                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
+                    node.status({
+                        fill: "green",
+                        shape: "ring",
+                        text: `running ${node.aliveRequests} reqs`,
+                        running: true
+                    });
                 }
                 node.send(buildMsgs(msg, response, false));
             }).catch((err) => {
@@ -62,6 +74,7 @@ module.exports = function (RED) {
         });
         node.on('close', function () {
             // tidy up any state
+            RED.fissionlog.remove(node.funcname);
         });
     }
 

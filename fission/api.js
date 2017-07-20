@@ -4,12 +4,20 @@ const OutClusterConfig = {
     controller: 'http://cluster.me:31313',
     router: 'http://cluster.me:31314',
     catalog: 'http://cluster.me:30080',
+    influxdb: {
+        host: 'cluster.me',
+        port: '31315',
+    },
 };
 
 const InClusterConfig = {
     controller: 'http://cluster.me:31313',
     router: 'http://cluster.me:31314',
     catalog: 'http://cluster.me:30080',
+    influxdb: {
+        host: 'cluster.me',
+        port: '31315',
+    },
 };
 
 /**
