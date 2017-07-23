@@ -83,15 +83,7 @@
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name">
     </div>
-    <div class="form-row">
-        <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
-        <input type="checkbox" id="node-input-errorflow" checked>
-    </div>
-    <div class="form-row">
-        <label for="node-input-outputs"><i class="fa fa-random"></i> Outputs</label>
-        <input id="node-input-outputs" style="width: 60px;" value=1>
-    </div>
-    <div class="form-row">
+   <div class="form-row">
         <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
         <input id="node-input-serviceclass" type="text" placeholder="rethinkdb" value="rethinkdb">
     </div>
@@ -119,6 +111,46 @@
 
 </script>
 
+<script type="text/x-red" data-template-name="fission-rethinkdb-update">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="rethinkdb" value="rethinkdb">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-database"><i class="fa fa-globe"></i> Database</label>
+        <input id="node-input-database" type="text" placeholder="database name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-table"><i class="fa fa-globe"></i> Table</label>
+        <input id="node-input-table" type="text" placeholder="table">
+    </div>
+    <div class="form-row">
+        <label for="node-input-key"><i class="fa fa-globe"></i> Key</label>
+        <input id="node-input-key" type="text" placeholder="key">
+    </div>
+    <div class="form-row">
+        <label for="node-input-value"><i class="fa fa-globe"></i> Value</label>
+        <input id="node-input-value" type="text" placeholder="value">
+    </div>
+    <div class="form-row">
+        <label for="node-input-newkey"><i class="fa fa-globe"></i> New Key</label>
+        <input id="node-input-newkey" type="text" placeholder="new key">
+    </div>
+    <div class="form-row">
+        <label for="node-input-newvalue"><i class="fa fa-globe"></i> New Value</label>
+        <input id="node-input-newvalue" type="text" placeholder="new value">
+    </div>
+</script>
+
 <script type="text/x-red" data-help-name="fission-rethinkdb-adapter">
     <p>Creates a Rethinkdb adapter end-point for creating web services.</p>
 
@@ -130,6 +162,11 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-rethinkdb-get">
+    <p>Creates a Rethinkdb adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/x-red" data-help-name="fission-rethinkdb-update">
     <p>Creates a Rethinkdb adapter end-point for creating web services.</p>
 
 </script>
@@ -389,15 +426,42 @@
                 key: {value: ""},
                 value: {value: ""},
                 funcname: {value: "std.rethinkdb.get"},
-
-                errorflow: {value: true},
-                outputs: {value: 2},
             },
             inputs: 1,
             outputs: 2,
             icon: "db.png",
             label: function () {
                 return this.name || this.bucket || 'rethinkdb-get';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditsave: function () {
+                onEditSave(this);
+            },
+        });
+
+        RED.nodes.registerType('fission-rethinkdb-update', {
+            category: 'output',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                serviceclass: {value: "rethinkdb", required: true},
+                instancename: {value: "", required: true},
+                database: {value: "", required: true},
+                table: {value: "", required: true},
+                key: {value: ""},
+                value: {value: ""},
+                newkey: {value: ""},
+                newvalue: {value: ""},
+                funcname: {value: "std.rethinkdb.update"},
+            },
+            inputs: 1,
+            outputs: 0,
+            icon: "db.png",
+            label: function () {
+                return this.name || this.bucket || 'rethinkdb-update';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";

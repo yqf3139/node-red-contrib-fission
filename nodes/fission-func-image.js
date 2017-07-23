@@ -25,15 +25,8 @@ module.exports = function (RED) {
         const funcname = 'std.image.convert';
         const node = this;
 
-        node.outputs = parseInt(n.outputs);
-
         node.instancename = n.instancename;
-        node.errorflow = n.errorflow;
         node.aliveRequests = 0;
-
-        const buildMsgs = function(msg, response, isErr) {
-            return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
-        };
 
         node.on('input', function (msg) {
             const instancename = node.instancename || msg.instancename;
@@ -46,21 +39,26 @@ module.exports = function (RED) {
 
             api.invokeFunction(funcname, 'POST', {}, {},
                 {instancename, payload: msg.payload}).then((response) => {
-                node.log(response);
 
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
                     node.status({});
                 } else {
-                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
+                    node.status({
+                        fill: "green",
+                        shape: "ring",
+                        text: `running ${node.aliveRequests} reqs`,
+                        running: true
+                    });
                 }
-                node.send(buildMsgs(msg, response, false));
+                Common.fillMsg(msg, response);
+                node.send([msg, null]);
             }).catch((err) => {
-                console.error(err.response.data);
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
-                node.send(buildMsgs(msg, err.response, true));
+                Common.fillMsg(msg, err.response);
+                node.send([null, msg]);
             });
         })
     }

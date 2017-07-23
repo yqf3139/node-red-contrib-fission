@@ -127,13 +127,15 @@ Api.prototype.restRequest = function (url, method, headers, params, body) {
     }).catch((e) => e.response);
 };
 
-Api.prototype.invokeFunction = function (name, method, headers, params, data) {
+Api.prototype.invokeFunction = function (name, method, headers, params, data, resptype) {
+    const responseType = resptype || 'json';
     return axios({
         method,
         url: `${this.routerPath}/fission-function/${name}`,
         headers,
         params,
         data,
+        responseType,
     })
         .then(checkStatus);
 };

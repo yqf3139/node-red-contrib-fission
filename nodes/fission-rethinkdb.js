@@ -113,19 +113,12 @@ module.exports = function (RED) {
         const funcname = 'std.rethinkdb.get';
         const node = this;
 
-        node.outputs = parseInt(n.outputs);
-
         node.instancename = n.instancename;
         node.database = n.database;
         node.table = n.table;
         node.key = n.key;
         node.value = n.value;
-        node.errorflow = n.errorflow;
         node.aliveRequests = 0;
-
-        const buildMsgs = function(msg, response, isErr) {
-            return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
-        };
 
         node.on('input', function (msg) {
             const instancename = node.instancename || msg.instancename;
@@ -149,12 +142,60 @@ module.exports = function (RED) {
                 } else {
                     node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: node.aliveRequests > 0});
                 }
-                node.send(buildMsgs(msg, response, false));
+                Common.fillMsg(msg, response);
+                node.send([msg, null]);
             }).catch((err) => {
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
-                node.send(buildMsgs(msg, err.response, true));
+                Common.fillMsg(msg, err.response);
+                node.send([null, msg]);
+            });
+        })
+    }
+
+    function FissionRethinkdbUpdater(n) {
+        RED.nodes.createNode(this, n);
+        const funcname = 'std.rethinkdb.update';
+        const node = this;
+
+        node.instancename = n.instancename;
+        node.database = n.database;
+        node.table = n.table;
+        node.key = n.key;
+        node.value = n.value;
+        node.newkey = n.newkey;
+        node.newvalue = n.newvalue;
+        node.aliveRequests = 0;
+
+        node.on('input', function (msg) {
+            const instancename = node.instancename || msg.instancename;
+            const database = node.database || msg.database;
+            const table = node.table || msg.table;
+            const key = node.key || msg.key;
+            const value = node.value || msg.value;
+            const newkey = node.newkey || msg.newkey;
+            const newvalue = node.newvalue || msg.newvalue;
+            if (!instancename || !database || !table || !key || !value || !newvalue || !newvalue) {
+                return;
+            }
+
+            node.aliveRequests += 1;
+            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
+
+            api.invokeFunction(funcname, 'POST', {}, {},
+                {instancename, database, table, key, value, newkey, newvalue}).then((response) => {
+
+                node.aliveRequests -= 1;
+                if (node.aliveRequests === 0) {
+                    node.status({});
+                } else {
+                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: node.aliveRequests > 0});
+                }
+            }).catch((err) => {
+                node.aliveRequests -= 1;
+                node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
+                node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
             });
         })
     }
@@ -162,4 +203,5 @@ module.exports = function (RED) {
     RED.nodes.registerType("fission-rethinkdb-adapter", FissionRethinkdbAdapter);
     RED.nodes.registerType("fission-rethinkdb-put", FissionRethinkdbPutter);
     RED.nodes.registerType("fission-rethinkdb-get", FissionRethinkdbGetter);
+    RED.nodes.registerType("fission-rethinkdb-update", FissionRethinkdbUpdater);
 };

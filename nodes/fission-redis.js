@@ -25,16 +25,9 @@ module.exports = function (RED) {
         const funcname = 'std.redis.cmd';
         const node = this;
 
-        node.outputs = parseInt(n.outputs);
-
         node.instancename = n.instancename;
         node.command = n.command;
-        node.errorflow = n.errorflow;
         node.aliveRequests = 0;
-
-        const buildMsgs = function(msg, response, isErr) {
-            return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
-        };
 
         node.on('input', function (msg) {
             const instancename = node.instancename || msg.instancename;
@@ -54,15 +47,19 @@ module.exports = function (RED) {
                 if (node.aliveRequests === 0) {
                     node.status({});
                 } else {
-                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`,
-                        running: node.aliveRequests > 0});
+                    node.status({
+                        fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`,
+                        running: node.aliveRequests > 0
+                    });
                 }
-                node.send(buildMsgs(msg, response, false));
+                Common.fillMsg(msg, response);
+                node.send([msg, null]);
             }).catch((err) => {
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
-                node.send(buildMsgs(msg, err.response, true));
+                Common.fillMsg(msg, err.response);
+                node.send([null, msg]);
             });
         })
     }

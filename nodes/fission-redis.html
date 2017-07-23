@@ -20,14 +20,6 @@
         <input type="text" id="node-input-name">
     </div>
     <div class="form-row">
-        <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
-        <input type="checkbox" id="node-input-errorflow" checked>
-    </div>
-    <div class="form-row">
-        <label for="node-input-outputs"><i class="fa fa-random"></i> Outputs</label>
-        <input id="node-input-outputs" style="width: 60px;" value=1>
-    </div>
-    <div class="form-row">
         <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
         <input id="node-input-serviceclass" type="text" placeholder="redis" value="redis">
     </div>
@@ -296,9 +288,6 @@
                 instancename: {value: "", required: true},
                 command: {value: "", required: true},
                 funcname: {value: "std.redis.cmd"},
-
-                errorflow: {value: true},
-                outputs: {value: 2},
             },
             inputs: 1,
             outputs: 2,

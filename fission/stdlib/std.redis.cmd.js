@@ -26,7 +26,6 @@ module.exports = function (context, callback) {
             callback(500, {err: err.toString()});
             return;
         }
-        console.log(replies.length + " replies");
         callback(200, {err: '', result: replies});
     });
 };

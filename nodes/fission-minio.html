@@ -74,7 +74,27 @@
         <input id="node-input-filename" type="text" placeholder="filename">
     </div>
 
+</script>
 
+
+<script type="text/x-red" data-template-name="fission-minio-fput">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
+        <input id="node-input-serviceclass" type="text" placeholder="minio" value="minio">
+    </div>
+    <div class="form-row">
+        <label for="node-input-instancename"><i class="fa fa-tasks"></i> Instance Name</label>
+        <select type="text" id="node-input-instancename" style="width:70%;">
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-bucket"><i class="fa fa-globe"></i> Bucket</label>
+        <input id="node-input-bucket" type="text" placeholder="bucket name">
+    </div>
 
 </script>
 
@@ -82,14 +102,6 @@
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name">
-    </div>
-    <div class="form-row">
-        <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
-        <input type="checkbox" id="node-input-errorflow" checked>
-    </div>
-    <div class="form-row">
-        <label for="node-input-outputs"><i class="fa fa-random"></i> Outputs</label>
-        <input id="node-input-outputs" style="width: 60px;" value=1>
     </div>
     <div class="form-row">
         <label for="node-input-serviceclass"><i class="fa fa-globe"></i> Service Classes</label>
@@ -117,6 +129,11 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-minio-put">
+    <p>Creates a Minio adapter end-point for creating web services.</p>
+
+</script>
+
+<script type="text/x-red" data-help-name="fission-minio-fput">
     <p>Creates a Minio adapter end-point for creating web services.</p>
 
 </script>
@@ -346,8 +363,8 @@
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
                 instancename: {value: "", required: true},
-                bucket: {value: "", required: true},
-                filename: {value: "", required: true},
+                bucket: {value: ""},
+                filename: {value: ""},
                 funcname: {value: "std.minio.put"},
             },
             inputs: 1,
@@ -365,6 +382,31 @@
             },
         });
 
+        RED.nodes.registerType('fission-minio-fput', {
+            category: 'function',
+            color: "rgb(231, 231, 174)",
+            defaults: {
+                name: {value: ""},
+                serviceclass: {value: "minio", required: true},
+                instancename: {value: "", required: true},
+                bucket: {value: ""},
+                funcname: {value: "std.minio.fput"},
+            },
+            inputs: 1,
+            outputs: 2,
+            icon: "db.png",
+            label: function () {
+                return this.name || this.bucket || 'minio-fput';
+            },
+            labelStyle: function () {
+                return this.name ? "node_label_italic" : "";
+            },
+            oneditprepare: onEditPrepare,
+            oneditsave: function () {
+                onEditSave(this);
+            },
+        });
+
         RED.nodes.registerType('fission-minio-get', {
             category: 'function',
             color: "rgb(231, 231, 174)",
@@ -372,12 +414,9 @@
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
                 instancename: {value: "", required: true},
-                bucket: {value: "", required: true},
-                filename: {value: "", required: true},
+                bucket: {value: ""},
+                filename: {value: ""},
                 funcname: {value: "std.minio.get"},
-
-                errorflow: {value: true},
-                outputs: {value: 2},
             },
             inputs: 1,
             outputs: 2,

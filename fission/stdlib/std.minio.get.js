@@ -15,25 +15,44 @@ module.exports = function (context, callback) {
         callback(400, {err: 'minio instance not registered for this func'});
         return;
     }
-
-    let size = 0;
-    let payload = '';
-    mc.getObject(bucket, filename, function (e, dataStream) {
+    mc.statObject(bucket, filename, function (e, stat) {
         if (e) {
             callback(500, {err: e.toString()});
             return console.log(e)
         }
-        dataStream.on('data', function (chunk) {
-            size += chunk.length;
-            payload += chunk;
-        });
-        dataStream.on('end', function () {
-            callback(200, {err: '', size, payload});
-            console.log("End. Total size = " + size);
-        });
-        dataStream.on('error', function (e) {
-            callback(500, {err: e.toString()});
-            console.error(e);
+        if (stat.contentType.startsWith('image')) {
+            const path = `/tmp/${Math.random()}/${filename}`;
+            mc.fGetObject(bucket, filename, path, function (e) {
+                if (e) {
+                    callback(500, {err: e.toString()});
+                    return console.log(e)
+                }
+                context.response.sendFile(path);
+                callback();
+            });
+            return
+        }
+        let size = 0;
+        let payload = '';
+        mc.getObject(bucket, filename, function (e, dataStream) {
+            if (e) {
+                callback(500, {err: e.toString()});
+                return console.log(e)
+            }
+            dataStream.on('data', function (chunk) {
+                size += chunk.length;
+                payload += chunk;
+            });
+            dataStream.on('end', function () {
+                callback(200, {err: '', size, payload});
+                console.log("End. Total size = " + size);
+            });
+            dataStream.on('error', function (e) {
+                callback(500, {err: e.toString()});
+                console.error(e);
+            });
         });
     });
+
+
 };

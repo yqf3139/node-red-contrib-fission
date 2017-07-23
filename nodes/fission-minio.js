@@ -108,22 +108,73 @@ module.exports = function (RED) {
         })
     }
 
+    function FissionMinioFPutter(n) {
+        RED.nodes.createNode(this, n);
+        const funcname = 'std.minio.fput';
+        const node = this;
+
+        node.outputs = parseInt(n.outputs);
+        node.instancename = n.instancename;
+        node.bucket = n.bucket;
+        node.aliveRequests = 0;
+        node.errorflow = n.errorflow;
+        const buildMsgs = function (msg, response, isErr) {
+            return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
+        };
+
+        node.on('input', function (msg) {
+            const instancename = node.instancename || msg.instancename;
+            const bucket = node.bucket || msg.bucket;
+            if (!instancename || !bucket) {
+                return;
+            }
+            let headers = {};
+            let params = {};
+            // if a plain or json payload
+            let body = {
+                from: 'node-red',
+                payload: msg.payload,
+            };
+            if (msg.req) {
+                headers = msg.req.headers;
+                params = msg.req.query;
+                body = msg.req.body;
+
+                delete msg.req;
+            }
+            headers['x-fission-params-instancename'] = instancename;
+            headers['x-fission-params-bucket'] = bucket;
+
+            node.aliveRequests += 1;
+            node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+
+            api.invokeFunction(funcname, 'POST', headers, params, body).then((response) => {
+                node.aliveRequests -= 1;
+                if (node.aliveRequests === 0) {
+                    node.status({});
+                } else {
+                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
+                }
+                Common.fillMsg(msg, response);
+                node.send([msg, null]);
+            }).catch((err) => {
+                node.status({fill: "red", shape: "dot", text: "an invocation failed"});
+                node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+                Common.fillMsg(msg, err.response);
+                node.send([null, msg]);
+            });
+        })
+    }
+
     function FissionMinioGetter(n) {
         RED.nodes.createNode(this, n);
         const funcname = 'std.minio.get';
         const node = this;
 
-        node.outputs = parseInt(n.outputs);
-
         node.instancename = n.instancename;
         node.bucket = n.bucket;
         node.filename = n.filename;
-        node.errorflow = n.errorflow;
         node.aliveRequests = 0;
-
-        const buildMsgs = function(msg, response, isErr) {
-            return Common.buildMsgs(msg, response, isErr, node.outputs, node.errorflow);
-        };
 
         node.on('input', function (msg) {
             const instancename = node.instancename || msg.instancename;
@@ -137,21 +188,27 @@ module.exports = function (RED) {
             node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
 
             api.invokeFunction(funcname, 'POST', {}, {},
-                {instancename, bucket, filename}).then((response) => {
-                node.log(response);
+                {instancename, bucket, filename}, 'arraybuffer').then((response) => {
 
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
                     node.status({});
                 } else {
-                    node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
+                    node.status({
+                        fill: "green",
+                        shape: "ring",
+                        text: `running ${node.aliveRequests} reqs`,
+                        running: true
+                    });
                 }
-                node.send(buildMsgs(msg, response, false));
+                Common.fillMsg(msg, response);
+                node.send([msg, null]);
             }).catch((err) => {
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
-                node.send(buildMsgs(msg, err.response, true));
+                Common.fillMsg(msg, err.response);
+                node.send([null, msg]);
             });
         })
     }
@@ -159,4 +216,5 @@ module.exports = function (RED) {
     RED.nodes.registerType("fission-minio-adapter", FissionMinioAdapter);
     RED.nodes.registerType("fission-minio-put", FissionMinioPutter);
     RED.nodes.registerType("fission-minio-get", FissionMinioGetter);
+    RED.nodes.registerType("fission-minio-fput", FissionMinioFPutter);
 };

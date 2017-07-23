@@ -1,5 +1,5 @@
 function fillMsg(msg, response) {
-    msg.payload = Object.assign({}, response.data);
+    msg.payload = response.data;
     msg.headers = response.headers;
     msg.statusCode = response.status;
     msg.statusText = response.statusText;

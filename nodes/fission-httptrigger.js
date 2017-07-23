@@ -17,7 +17,6 @@
 module.exports = function (RED) {
     "use strict";
     const bodyParser = require("body-parser");
-    const multer = require("multer");
     const cookieParser = require("cookie-parser");
     const getBody = require('raw-body');
     const jsonParser = bodyParser.json();
@@ -81,7 +80,6 @@ module.exports = function (RED) {
                 this.url = '/' + this.url;
             }
             this.method = n.method;
-            this.upload = n.upload;
 
             const node = this;
 
@@ -115,24 +113,11 @@ module.exports = function (RED) {
                 // TODO fission metrics
             }
 
-            let multipartParser = function (req, res, next) {
-                next();
-            };
-            if (this.upload) {
-                const mp = multer({storage: multer.memoryStorage()}).any();
-                multipartParser = function (req, res, next) {
-                    mp(req, res, function (err) {
-                        req._body = true;
-                        next(err);
-                    })
-                };
-            }
-
             const url = `/${this.id}`;
             if (this.method === "get") {
                 RED.httpNode.get(url, cookieParser(), metricsHandler, this.callback, this.errorHandler);
             } else if (this.method === "post") {
-                RED.httpNode.post(url, cookieParser(), metricsHandler, jsonParser, urlencParser, multipartParser, rawBodyParser, this.callback, this.errorHandler);
+                RED.httpNode.post(url, cookieParser(), metricsHandler, jsonParser, urlencParser, rawBodyParser, this.callback, this.errorHandler);
             } else if (this.method === "put") {
                 RED.httpNode.put(url, cookieParser(), metricsHandler, jsonParser, urlencParser, rawBodyParser, this.callback, this.errorHandler);
             } else if (this.method === "patch") {
