@@ -72,7 +72,7 @@ module.exports = function (RED) {
 
     function FissionMinioPutter(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.minio.put';
+        const funcname = 'std-minio-put';
         const node = this;
 
         node.instancename = n.instancename;
@@ -110,7 +110,7 @@ module.exports = function (RED) {
 
     function FissionMinioFPutter(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.minio.fput';
+        const funcname = 'std-minio-fput';
         const node = this;
 
         node.outputs = parseInt(n.outputs);
@@ -168,7 +168,7 @@ module.exports = function (RED) {
 
     function FissionMinioGetter(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.minio.get';
+        const funcname = 'std-minio-get';
         const node = this;
 
         node.instancename = n.instancename;

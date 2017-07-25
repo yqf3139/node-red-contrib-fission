@@ -72,7 +72,7 @@ module.exports = function (RED) {
 
     function FissionRethinkdbPutter(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.rethinkdb.put';
+        const funcname = 'std-rethinkdb-put';
         const node = this;
 
         node.instancename = n.instancename;
@@ -110,7 +110,7 @@ module.exports = function (RED) {
 
     function FissionRethinkdbGetter(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.rethinkdb.get';
+        const funcname = 'std-rethinkdb-get';
         const node = this;
 
         node.instancename = n.instancename;
@@ -156,7 +156,7 @@ module.exports = function (RED) {
 
     function FissionRethinkdbUpdater(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.rethinkdb.update';
+        const funcname = 'std-rethinkdb-update';
         const node = this;
 
         node.instancename = n.instancename;

@@ -22,7 +22,7 @@ module.exports = function (RED) {
 
     function FissionRedis(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.redis.cmd';
+        const funcname = 'std-redis-cmd';
         const node = this;
 
         node.instancename = n.instancename;

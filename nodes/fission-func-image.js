@@ -22,7 +22,7 @@ module.exports = function (RED) {
 
     function FissionImage(n) {
         RED.nodes.createNode(this, n);
-        const funcname = 'std.image.convert';
+        const funcname = 'std-image-convert';
         const node = this;
 
         node.instancename = n.instancename;

@@ -74,7 +74,7 @@ module.exports = function (RED) {
         const node = this;
         node.topic = n.topic;
         node.aliveRequests = 0;
-        const funcname = 'std.mq.nats-pub';
+        const funcname = 'std-mq-natspub';
 
         node.on('input', function (msg) {
             const topic = node.topic || msg.topic;
