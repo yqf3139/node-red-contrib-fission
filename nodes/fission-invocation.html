@@ -235,6 +235,11 @@
                         // get the code
                         $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
                             that.editor.setValue(atob(data.code));
+                            // update other fields
+                            console.log(data);
+//                            $('#node-input-environment').val(data.environment.metadata.name);
+                            $('#node-input-funcuid').val(data.metadata.uid);
+                            $('#node-input-serviceinstances').val(data.serviceInstances.join(','));
                         });
                     }
 
@@ -360,10 +365,12 @@
 </span>
 
 
+
 </script>
 
 <script type="text/x-red" data-help-name="fission-invocation">
     <p>Nodes that invoke, manager fission functions </p>
+
 
 
 </script>
