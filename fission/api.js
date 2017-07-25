@@ -16,7 +16,7 @@ const InClusterConfig = {
     catalog: 'http://catalog-catalog-apiserver.catalog',
     influxdb: {
         host: 'influxdb.fission',
-        port: '31315',
+        port: '8086',
     },
 };
 

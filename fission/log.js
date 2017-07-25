@@ -34,6 +34,8 @@ function FissionLog(comms, config, interval) {
                 if (results.length > 0) {
                     f.lasttime = results[0].time.getTime() * 1000 * 1000;
                 }
+            }).catch((err) => {
+                console.error(err);
             });
         });
     }, interval);
