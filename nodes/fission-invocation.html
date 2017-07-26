@@ -102,6 +102,7 @@
                 environment: {value: "", required: true},
                 code: {value: ""},
                 serviceinstances: {value: ""},
+                version: {value: ""},
                 cputarget: {value: 60},
                 maxinstance: {value: 3},
 
@@ -187,6 +188,7 @@
                 $("#node-input-maxinstance").spinner({min: 1, max: 20});
 
                 $('#node-input-errorflow').val(this.errorflow);
+                $('.fission-func-new-field').hide();
 
                 const that = this;
                 this.editor = RED.editor.createEditor({
@@ -209,6 +211,7 @@
                 ).then(() => {
                     const envList = $('#node-input-environment');
                     const fnList = $('#node-input-funcname');
+                    const versionList = $('#node-input-version');
 
                     // fill in environment list
                     store.environments.map((e) => {
@@ -237,9 +240,19 @@
                             that.editor.setValue(atob(data.code));
                             // update other fields
                             console.log(data);
-//                            $('#node-input-environment').val(data.environment.metadata.name);
+                            $('#node-input-environment').val(data.environment.name);
                             $('#node-input-funcuid').val(data.metadata.uid);
                             $('#node-input-serviceinstances').val(data.serviceInstances.join(','));
+                        });
+
+                        // get the versions
+                        $.get(`${controller}/v1/functions/${that.funcname}/versions`, (data, status) => {
+                            versionList.empty();
+                            $('<option value="">latest</option>').appendTo(versionList);
+                            data.map((e, idx) => {
+                                $(`<option value='${e.uid}'>#${idx + 1} @${new Date(e.timestamp * 1000).toLocaleString()}</option>`)
+                                    .appendTo(versionList);
+                            });
                         });
                     }
 
@@ -263,6 +276,26 @@
                         }
                         // load the function code
                         $.get(`${controller}/v1/functions/${fn.metadata.name}`, (data, status) => {
+                            that.editor.setValue(atob(data.code));
+                        });
+
+                        // get the versions
+                        $.get(`${controller}/v1/functions/${fn.metadata.name}/versions`, (data, status) => {
+                            versionList.empty();
+                            $('<option value="">latest</option>').appendTo(versionList);
+                            data.map((e, idx) => {
+                                $(`<option value='${e.uid}'>#${idx + 1} @${new Date(e.timestamp * 1000).toLocaleString()}</option>`)
+                                    .appendTo(versionList);
+                            });
+                        });
+                    });
+
+                    versionList.change((e) => {
+                        const uid = e.target.value;
+                        if (!uid) return;
+                        const fname = fnList.val();
+                        // load the function code
+                        $.get(`${controller}/v1/functions/${fname}?uid=${uid}`, (data, status) => {
                             that.editor.setValue(atob(data.code));
                         });
                     });
@@ -334,6 +367,12 @@
         </select>
     </div>
     <div class="form-row">
+        <label for="node-input-version"><i class="icon-tag"></i> Version</label>
+        <select id="node-input-version" class="fission-func-readonly" disabled>
+            <option value="">latest</option>
+        </select>
+    </div>
+    <div class="form-row">
         <label for="node-input-serviceinstances"><i class="icon-tag"></i> Svc Instances</label>
         <input type="text" id="node-input-serviceinstances" class="fission-func-readonly" placeholder="Service Instances" disabled>
     </div>
@@ -364,13 +403,9 @@
     <img src="red/images/spin.svg">
 </span>
 
-
-
 </script>
 
 <script type="text/x-red" data-help-name="fission-invocation">
     <p>Nodes that invoke, manager fission functions </p>
-
-
 
 </script>

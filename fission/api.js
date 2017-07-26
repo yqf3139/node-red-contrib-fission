@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const OutClusterConfig = {
+let OutClusterConfig = {
     controller: 'http://cluster.me:31313',
     router: 'http://cluster.me:31314',
     catalog: 'http://cluster.me:30080',
@@ -10,7 +10,7 @@ const OutClusterConfig = {
     },
 };
 
-const InClusterConfig = {
+let InClusterConfig = {
     controller: 'http://controller.fission',
     router: 'http://router.fission',
     catalog: 'http://catalog-catalog-apiserver.catalog',
@@ -19,6 +19,8 @@ const InClusterConfig = {
         port: '8086',
     },
 };
+
+InClusterConfig = OutClusterConfig;
 
 /**
  * Checks if a network request came back fine, and throws an error if not
@@ -164,6 +166,10 @@ Api.prototype.removeTriggerTimer = function (item) {
 Api.prototype.postTriggerTimer = function (item) {
     return axios.post(`${this.basePath}triggers/time`, item)
         .then(checkStatus);
+};
+Api.prototype.getFunctionVersions = function(name) {
+  return axios.get(`${basePath}functions/${name}/versions`)
+    .then(checkStatus);
 };
 
 module.exports = {
