@@ -92,8 +92,10 @@ module.exports = function (RED) {
     const controllerProxy = makeProxy(Api.InClusterConfig.controller, '/proxy/fission-controller');
     const routerProxy = makeProxy(Api.InClusterConfig.router, '/proxy/fission-router');
     const catalogProxy = makeProxy(Api.InClusterConfig.catalog, '/proxy/fission-catalog');
+    const prometheusProxy = makeProxy(Api.InClusterConfig.prometheus, '/proxy/fission-prometheus');
 
     RED.httpNode.use("/proxy/fission-controller/*", controllerProxy);
     RED.httpNode.use("/proxy/fission-router/*", routerProxy);
     RED.httpNode.use("/proxy/fission-catalog/*", catalogProxy);
+    RED.httpNode.use("/proxy/fission-prometheus/*", prometheusProxy);
 };

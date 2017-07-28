@@ -1,9 +1,21 @@
+<script src="http://www.chartjs.org/dist/2.6.0/Chart.bundle.js"></script>
 <script type="text/javascript">
     (function () {
         "use strict";
 
+        window.chartColors = {
+            red: 'rgb(255, 99, 132)',
+            orange: 'rgb(255, 159, 64)',
+            yellow: 'rgb(255, 205, 86)',
+            green: 'rgb(75, 192, 192)',
+            blue: 'rgb(54, 162, 235)',
+            purple: 'rgb(153, 102, 255)',
+            grey: 'rgb(201, 203, 207)'
+        };
+
         const controller = '/proxy/fission-controller';
         const router = '/proxy/fission-router';
+        const prometheus = '/proxy/fission-prometheus/api/v1';
 
         const envToAceMode = {
             node: 'ace/mode/javascript',
@@ -14,6 +26,91 @@
         const extToEnv = {
             js: 'node',
             py: 'python',
+        };
+        
+        let graphs = [];
+
+        const makeDoughnutConfig = (data, title) => {
+            return {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: title
+                    },
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            }
+        };
+
+        const makeTimelineConfig = (data, title) => {
+            return {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    title:{
+                        display: true,
+                        text: title,
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: "time",
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Date'
+                            }
+                        }],
+                        yAxes: [{
+                            display: true,
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'value'
+                            }
+                        }]
+                    }
+                }
+            };
+        };
+
+        const makeDoughnutData = (src) => {
+           return  {
+                datasets: [{
+                    data: src.map((e) => parseFloat(e.value[1])),
+                    backgroundColor: [
+                        window.chartColors.red,
+                        window.chartColors.blue,
+                        window.chartColors.orange,
+                        window.chartColors.green,
+                        window.chartColors.yellow,
+                        window.chartColors.purple,
+                    ],
+                    label: 'Dataset 1'
+                }],
+                labels: src.map((e) => parseFloat(e.metric.code)),
+            };
+        };
+
+        const makeTimelineData = (src, label, ratio=1) => {
+            const color = Chart.helpers.color;
+            return {
+                datasets: [{
+                    label: label,
+                    backgroundColor: color(window.chartColors.blue).alpha(0.5).rgbString(),
+                    borderColor: window.chartColors.blue,
+                    fill: false,
+                    data: src.map((e) => ({y: ratio * parseFloat(e[1]), x: e[0]*1000})),
+                }]
+            };
         };
 
         RED.fission = {
@@ -80,11 +177,145 @@
             // TODO sync node info
             nn.funcname = funcname;
             nn.environment = environment;
-            console.log('nn', nn);
             RED.nodes.add(nn);
             RED.editor.validateNode(nn);
             RED.nodes.dirty(true);
             RED.view.redraw(true);
+        }
+
+        function visOpsData(store) {
+            destoryOpsGraphs();
+
+            let ctx, config;
+
+            $('#fission-metrics-instance-number').text(store.instanceNumber);
+            $('#fission-metrics-avg-alive-time').text(`${prettyFloat(store.avgAliveTime / 60)} mins`);
+            $('#fission-metrics-running-time').text(`${prettyFloat(store.runningTime / 60)} mins`);
+            // instance graph
+            ctx = document.getElementById("fission-canvas-instance").getContext("2d");
+            config = makeTimelineConfig(makeTimelineData(store.instanceNumberRange, 'instance'), 'Instance');
+            graphs.push(new Chart(ctx, config));
+
+            $('#fission-metrics-invocation-number').text(store.invocationNumber);
+            $('#fission-metrics-invocation-rate1m').text(store.invocationRate1m);
+            // invocation rate graph
+            ctx = document.getElementById("fission-canvas-invocation").getContext("2d");
+            config = makeTimelineConfig(makeTimelineData(store.invocationRate1mRange, 'invocation'), 'Invocation rate avg by 1 min');
+            graphs.push(new Chart(ctx, config));
+
+            $('#fission-metrics-latency-sum').text(store.latencySum);
+            $('#fission-metrics-latency-avg').text(store.latencyAvg);
+            // mem graph
+            ctx = document.getElementById("fission-canvas-mem").getContext("2d");
+            config = makeTimelineConfig(makeTimelineData(store.memRange, 'mem', 1/1000000), 'Memory usage');
+            graphs.push(new Chart(ctx, config));
+            // cpu graph
+            ctx = document.getElementById("fission-canvas-cpu").getContext("2d");
+            config = makeTimelineConfig(makeTimelineData(store.cpu1mRange, 'cpu'), 'CPU usage avg by 1 min');
+            graphs.push(new Chart(ctx, config));
+
+            // code pie
+            ctx = document.getElementById("fission-canvas-code").getContext("2d");
+            config = makeDoughnutConfig(makeDoughnutData(store.code), 'Response Code');
+            graphs.push(new Chart(ctx, config));
+            $('#fission-metrics-resp-size-sum').text(`${store.respSizeSum} bytes`);
+            $('#fission-metrics-resp-size-avg').text(`${store.respSizeAvg} bytes`);
+        }
+
+        const hasError = (data, status) => {
+            if (status === 'success') return false;
+            console.error(data, status);
+            return true;
+        };
+
+        const prettyFloat = (v) =>
+            v.toFixed(4).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/,'$1');
+
+        const makeStoreValue = (store, name) => {
+            return (data, status) => {
+                if (hasError(data, status)) {
+                    return;
+                }
+                if (data.data.result.length === 0) {
+                    store[name] = '0';
+                    return;
+                }
+                store[name] = prettyFloat(parseFloat(data.data.result[0].value[1]));
+            };
+        };
+
+        const makeStoreMultiValue = (store, name) => {
+            return (data, status) => {
+                if (hasError(data, status)) {
+                    return;
+                }
+                if (data.data.result.length === 0) {
+                    store[name] = [];
+                    return;
+                }
+                store[name] = data.data.result;
+            };
+        };
+
+        const makeStoreRange = (store, name) => {
+            return (data, status) => {
+                if (hasError(data, status)) {
+                    return;
+                }
+                if (data.data.result.length === 0) {
+                    store[name] = [];
+                    return;
+                }
+                store[name] = data.data.result[0].values;
+            };
+        };
+
+        function onLoadOpsData(fname, start, step) {
+            if (!fname) return;
+
+            // ops data
+            const store = {};
+            const qRange = `&start=${start/1000}&end=${Date.now()/1000}&step=${step}`;
+            const qInstanceNumber = `sum by (funcname) (fission_func_is_alive{funcname='${fname}'})`;
+            const qAvgAliveTime = `avg by (funcname) (fission_func_alive_seconds_summary_sum{funcname='${fname}'} / fission_func_alive_seconds_summary_count{funcname='${fname}'})`;
+            const qRunningTime = `avg by (funcname) (fission_func_running_seconds_summary_sum{funcname='${fname}'} / fission_func_running_seconds_summary_count{funcname='${fname}'})`;
+
+            const qInvocationNumber = `sum by (funcname) (fission_http_calls_total{funcname='${fname}'})`;
+            const qInvocationRate1m = `sum by (funcname) (rate(fission_http_calls_total{funcname='${fname}'}[1m]))`;
+
+            const qLatencySum = `sum by (funcname) (fission_http_call_latency_seconds_summary_sum{funcname='${fname}'})`;
+            const qMem = `sum by (functionName) ( k8s_pod_labels{functionName='${fname}'} * on (pod_name) group_left sum by (pod_name) (container_memory_usage_bytes{namespace='fission-function'}) )`;
+            const qCpu1m = `sum by (functionName) ( k8s_pod_labels{functionName = '${fname}'} * on (pod_name) group_left sum by (pod_name) ( rate(container_cpu_usage_seconds_total{namespace='fission-function'}[1m]) ) )`;
+
+            const qCode = `sum by (code) (fission_http_calls_total{funcname='app-test'})`;
+            const qRespSizeSum = `sum by (funcname) (fission_http_call_response_size_bytes_summary_sum{funcname='${fname}'})`;
+            $.when(
+                $.get(`${prometheus}/query?query=${qInstanceNumber}`, makeStoreValue(store, 'instanceNumber')),
+                $.get(`${prometheus}/query?query=${qAvgAliveTime}`, makeStoreValue(store, 'avgAliveTime')),
+                $.get(`${prometheus}/query?query=${qRunningTime}`, makeStoreValue(store, 'runningTime')),
+                $.get(`${prometheus}/query_range?query=${qInstanceNumber}${qRange}`, makeStoreRange(store, 'instanceNumberRange')),
+
+                $.get(`${prometheus}/query?query=${qInvocationNumber}`, makeStoreValue(store, 'invocationNumber')),
+                $.get(`${prometheus}/query?query=${qInvocationRate1m}`, makeStoreValue(store, 'invocationRate1m')),
+                $.get(`${prometheus}/query_range?query=${qInvocationRate1m}${qRange}`, makeStoreRange(store, 'invocationRate1mRange')),
+
+                $.get(`${prometheus}/query?query=${qLatencySum}`, makeStoreValue(store, 'latencySum')),
+                $.get(`${prometheus}/query_range?query=${qMem}${qRange}`, makeStoreRange(store, 'memRange')),
+                $.get(`${prometheus}/query_range?query=${qCpu1m}${qRange}`, makeStoreRange(store, 'cpu1mRange')),
+
+                $.get(`${prometheus}/query?query=${qCode}`, makeStoreMultiValue(store, 'code')),
+                $.get(`${prometheus}/query?query=${qRespSizeSum}`, makeStoreValue(store, 'respSizeSum')),
+            ).then(() => {
+                store['latencyAvg'] = prettyFloat(store['latencySum'] / store['invocationNumber']);
+                store['respSizeAvg'] = prettyFloat(store['respSizeSum'] / store['invocationNumber']);
+                console.log(store);
+                visOpsData(store);
+            });
+        }
+        
+        function destoryOpsGraphs() {
+            graphs.map((g) => g.destroy());
+            graphs = [];
         }
 
         RED.nodes.registerType('fission-invocation', {
@@ -105,6 +336,7 @@
                 version: {value: ""},
                 cputarget: {value: 60},
                 maxinstance: {value: 3},
+                timerange: {value: 0.5},
 
                 outputs: {value: 2},
             },
@@ -121,6 +353,7 @@
                 $("#node-input-code").val(this.editor.getValue());
                 this.editor.destroy();
                 delete this.editor;
+                destoryOpsGraphs();
                 // if is update able, call fission
                 // wait until the field values are stored by node-red
                 const that = this;
@@ -181,11 +414,13 @@
             oneditcancel: function () {
                 this.editor.destroy();
                 delete this.editor;
+                destoryOpsGraphs();
             },
             oneditprepare: function () {
                 $("#node-input-outputs").spinner({min: 1, max: 10});
                 $("#node-input-cputarget").spinner({min: 1, max: 100});
                 $("#node-input-maxinstance").spinner({min: 1, max: 20});
+                $("#node-input-timerange").spinner({min: 0.1, max: 24});
 
                 $('#node-input-errorflow').val(this.errorflow);
                 $('.fission-func-new-field').hide();
@@ -239,7 +474,6 @@
                         $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
                             that.editor.setValue(atob(data.code));
                             // update other fields
-                            console.log(data);
                             $('#node-input-environment').val(data.environment.name);
                             $('#node-input-funcuid').val(data.metadata.uid);
                             $('#node-input-serviceinstances').val(data.serviceInstances.join(','));
@@ -263,7 +497,6 @@
                         if (!fnName) return;
 
                         const fn = store.functions.filter((f) => f.metadata.name === fnName)[0];
-                        console.log('select func', fnName, fn);
 
                         envList.val(fn.environment.name);
                         $('#node-input-funcuid').val(fn.metadata.uid);
@@ -320,7 +553,11 @@
                     $('.fission-loading-spinner').hide();
                     $('.fission-container').show();
                 });
-            }
+
+                const timerange = $("#node-input-timerange").val();
+                onLoadOpsData(this.funcname, Date.now() - 1000 * 60 * 60 * timerange, 10);
+            },
+
         });
     })();
 </script>
@@ -331,71 +568,175 @@
     <input type="text" id="node-input-name" placeholder="Node Name">
 </div>
 <div class="form-row">
-    <label for="node-input-errorflow"><i class="icon-tag"></i> Restrict Error Output Flow</label>
-    <input type="checkbox" id="node-input-errorflow" checked>
-</div>
-<div class="form-row">
     <label for="node-input-readonly"><i class="icon-tag"></i> Readonly</label>
     <input type="checkbox" id="node-input-readonly" checked>
 </div>
-<div class="form-row">
-    <label for="node-input-outputs">
-        <i class="fa fa-random"></i>
-        Outputs
-    </label>
-    <input id="node-input-outputs" style="width: 60px;" value=1>
-</div>
 <div class="fission-container">
-    <div class="form-row fission-func-old-field">
-        <label for="node-input-funcname"><i class="icon-tag"></i> Function</label>
-        <select id="node-input-funcname">
-            <option value="">-</option>
-        </select>
-    </div>
-    <div class="form-row fission-func-old-field">
-        <label for="node-input-funcuid"><i class="icon-tag"></i> Uid</label>
-        <input type="text" id="node-input-funcuid" placeholder="Uid" disabled>
-    </div>
-    <div class="form-row fission-func-new-field">
-        <label for="node-input-newname"><i class="icon-tag"></i> Function</label>
-        <input type="text" id="node-input-newname" class="fission-func-readonly" placeholder="Function" disabled>
-    </div>
-    <div class="form-row">
-        <label for="node-input-environment"><i class="icon-tag"></i> Environment</label>
-        <select id="node-input-environment" class="fission-func-readonly" disabled>
-            <option value="">-</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-version"><i class="icon-tag"></i> Version</label>
-        <select id="node-input-version" class="fission-func-readonly" disabled>
-            <option value="">latest</option>
-        </select>
-    </div>
-    <div class="form-row">
-        <label for="node-input-serviceinstances"><i class="icon-tag"></i> Svc Instances</label>
-        <input type="text" id="node-input-serviceinstances" class="fission-func-readonly" placeholder="Service Instances" disabled>
-    </div>
-    <div class="form-row" style="margin-bottom: 0px;">
-        <label for="node-input-code"><i class="fa fa-wrench"></i> Code</label>
-        <input type="hidden" id="node-input-code" autofocus="autofocus">
-    </div>
-    <div class="form-row node-text-editor-row">
-        <div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-func-editor" ></div>
-    </div>
-        <div class="form-row">
-        <label for="node-input-cputarget">
-            <i class="fa fa-random"></i>
-            Cpu Target
-        </label>
-        <input id="node-input-cputarget" class="fission-func-readonly" style="width: 60px;" value=60 disabled>
-    </div>
-    <div class="form-row">
-        <label for="node-input-maxinstance">
-            <i class="fa fa-random"></i>
-            Max Instances
-        </label>
-        <input id="node-input-maxinstance" class="fission-func-readonly" style="width: 60px;" value=3 disabled>
+    <ul class="nav nav-tabs">
+        <li class="active"><a data-toggle="tab" href="#home">Development</a></li>
+        <li><a data-toggle="tab" href="#menu1">Operations</a></li>
+    </ul>
+    <div class="tab-content">
+        <div id="home" class="tab-pane fade in active">
+            <div class="form-row fission-func-old-field">
+                <label for="node-input-funcname"><i class="icon-tag"></i> Function</label>
+                <select id="node-input-funcname">
+                    <option value="">-</option>
+                </select>
+            </div>
+            <div class="form-row fission-func-old-field">
+                <label for="node-input-funcuid"><i class="icon-tag"></i> Uid</label>
+                <input type="text" id="node-input-funcuid" placeholder="Uid" disabled>
+            </div>
+            <div class="form-row fission-func-new-field">
+                <label for="node-input-newname"><i class="icon-tag"></i> Function</label>
+                <input type="text" id="node-input-newname" class="fission-func-readonly" placeholder="Function" disabled>
+            </div>
+            <div class="form-row">
+                <label for="node-input-environment"><i class="icon-tag"></i> Environment</label>
+                <select id="node-input-environment" class="fission-func-readonly" disabled>
+                    <option value="">-</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-version"><i class="icon-tag"></i> Version</label>
+                <select id="node-input-version" class="fission-func-readonly" disabled>
+                    <option value="">latest</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-serviceinstances"><i class="icon-tag"></i> Svc Instances</label>
+                <input type="text" id="node-input-serviceinstances" class="fission-func-readonly" placeholder="Service Instances" disabled>
+            </div>
+            <div class="form-row">
+                <label for="node-input-outputs">
+                    <i class="fa fa-random"></i>
+                    Outputs
+                </label>
+                <input id="node-input-outputs" style="width: 60px;" value=1>
+            </div>
+            <div class="form-row">
+                <label for="node-input-errorflow"><i class="icon-tag"></i> Err Flow</label>
+                <input type="checkbox" id="node-input-errorflow" checked>
+            </div>
+            <div class="form-row" style="margin-bottom: 0px;">
+                <label for="node-input-code"><i class="fa fa-wrench"></i> Code</label>
+                <input type="hidden" id="node-input-code" autofocus="autofocus">
+            </div>
+            <div class="form-row node-text-editor-row">
+                <div style="height: 250px; min-height:150px;" class="node-text-editor" id="node-input-func-editor" ></div>
+            </div>
+        </div>
+        <div id="menu1" class="tab-pane fade">
+            <div class="form-row">
+                <label for="node-input-timerange">
+                    <i class="fa fa-random"></i>
+                    Time range
+                </label>
+                <input id="node-input-timerange" style="width: 60px;" value=1>
+            </div>
+            <h4>Instances</h4>
+            <div class="form-row">
+                <label for="node-input-cputarget">
+                    <i class="fa fa-random"></i>
+                    Cpu Target
+                </label>
+                <input id="node-input-cputarget" class="fission-func-readonly" style="width: 60px;" value=60 disabled>
+            </div>
+            <div class="form-row">
+                <label for="node-input-maxinstance">
+                    <i class="fa fa-random"></i>
+                    Max Instances
+                </label>
+                <input id="node-input-maxinstance" class="fission-func-readonly" style="width: 60px;" value=3 disabled>
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-instance-number">
+                    <i class="fa fa-random"></i>
+                    Instance
+                </label>
+                <label class="label label-info" id="fission-metrics-instance-number" ></label>
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-avg-alive-time">
+                    <i class="fa fa-random"></i>
+                    Avg Alive
+                </label>
+                <label class="label label-info" id="fission-metrics-avg-alive-time" ></label>
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-running-time">
+                    <i class="fa fa-random"></i>
+                    Running
+                </label>
+                <label class="label label-info" id="fission-metrics-running-time" ></label>
+            </div>
+            <div style="width:100%, height:400px">
+                <canvas id="fission-canvas-instance" />
+            </div>
+
+            <h4>Invocations</h4>
+            <div class="form-row">
+                <label for="fission-metrics-invocation-number">
+                    <i class="fa fa-random"></i>
+                    Invocation
+                </label>
+                <label class="label label-info" id="fission-metrics-invocation-number" ></label>
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-invocation-rate1m">
+                    <i class="fa fa-random"></i>
+                    Rate 1 min
+                </label>
+                <label class="label label-info" id="fission-metrics-invocation-rate1m" ></label>
+            </div>
+            <div style="width:100%, height:400px">
+                <canvas id="fission-canvas-invocation" />
+            </div>
+
+            <h4>Computation Time</h4>
+            <div class="form-row">
+                <label for="fission-metrics-latency-sum">
+                    <i class="fa fa-random"></i>
+                    Sum
+                </label>
+                <label class="label label-info" id="fission-metrics-latency-sum" ></label>
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-latency-avg">
+                    <i class="fa fa-random"></i>
+                    Avg
+                </label>
+                <label class="label label-info" id="fission-metrics-latency-avg" ></label>
+            </div>
+
+            <h4>Performance</h4>
+            <div style="width:100%, height:400px">
+                <canvas id="fission-canvas-cpu" />
+            </div>
+            <div style="width:100%, height:400px">
+                <canvas id="fission-canvas-mem" />
+            </div>
+
+            <h4>Response</h4>
+            <div style="width:75%">
+                <canvas id="fission-canvas-code" />
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-resp-size-sum">
+                    <i class="fa fa-random"></i>
+                    Sum
+                </label>
+                <label class="label label-info" id="fission-metrics-resp-size-sum" ></label>
+            </div>
+            <div class="form-row">
+                <label for="fission-metrics-resp-size-avg">
+                    <i class="fa fa-random"></i>
+                    Avg
+                </label>
+                <label class="label label-info" id="fission-metrics-resp-size-avg" ></label>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -4,6 +4,7 @@ let OutClusterConfig = {
     controller: 'http://cluster.me:31313',
     router: 'http://cluster.me:31314',
     catalog: 'http://cluster.me:30080',
+    prometheus: 'http://cluster.me:31325',
     influxdb: {
         host: 'cluster.me',
         port: '31315',
@@ -14,6 +15,7 @@ let InClusterConfig = {
     controller: 'http://controller.fission',
     router: 'http://router.fission',
     catalog: 'http://catalog-catalog-apiserver.catalog',
+    prometheus: 'http://prometheus.fission:9090',
     influxdb: {
         host: 'influxdb.fission',
         port: '8086',
