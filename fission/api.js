@@ -12,12 +12,12 @@ let OutClusterConfig = {
 };
 
 let InClusterConfig = {
-    controller: 'http://controller.fission',
-    router: 'http://router.fission',
+    controller: 'http://controller',
+    router: 'http://router',
     catalog: 'http://catalog-catalog-apiserver.catalog',
-    prometheus: 'http://prometheus.fission:9090',
+    prometheus: 'http://prometheus.fission-metrics:9090',
     influxdb: {
-        host: 'influxdb.fission',
+        host: 'influxdb',
         port: '8086',
     },
 };
