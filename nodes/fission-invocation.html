@@ -273,22 +273,26 @@
         function onLoadOpsData(fname, start, step) {
             if (!fname) return;
 
+            const svcNs = window.location.port === '31418' ? 'fission-dev' : 'fission';
+            const fncNs = window.location.port === '31418' ? 'fission-dev-function' : 'fission-function';
+            const qSvcNs1 = `kubernetes_namespace='${svcNs}'`;
+            const qFncNs = `namespace='${fncNs}'`;
             // ops data
             const store = {};
             const qRange = `&start=${start/1000}&end=${Date.now()/1000}&step=${step}`;
-            const qInstanceNumber = `sum by (funcname) (fission_func_is_alive{funcname='${fname}'})`;
-            const qAvgAliveTime = `avg by (funcname) (fission_func_alive_seconds_summary_sum{funcname='${fname}'} / fission_func_alive_seconds_summary_count{funcname='${fname}'})`;
-            const qRunningTime = `avg by (funcname) (fission_func_running_seconds_summary_sum{funcname='${fname}'} / fission_func_running_seconds_summary_count{funcname='${fname}'})`;
+            const qInstanceNumber = `sum by (funcname) (fission_func_is_alive{funcname='${fname}',${qSvcNs1}})`;
+            const qAvgAliveTime = `avg by (funcname) (fission_func_alive_seconds_summary_sum{funcname='${fname}',${qSvcNs1}} / fission_func_alive_seconds_summary_count{funcname='${fname}',${qSvcNs1}})`;
+            const qRunningTime = `avg by (funcname) (fission_func_running_seconds_summary_sum{funcname='${fname}',${qSvcNs1}} / fission_func_running_seconds_summary_count{funcname='${fname}',${qSvcNs1}})`;
 
-            const qInvocationNumber = `sum by (funcname) (fission_http_calls_total{funcname='${fname}'})`;
-            const qInvocationRate1m = `sum by (funcname) (rate(fission_http_calls_total{funcname='${fname}'}[1m]))`;
+            const qInvocationNumber = `sum by (funcname) (fission_http_calls_total{funcname='${fname}',${qSvcNs1}})`;
+            const qInvocationRate1m = `sum by (funcname) (rate(fission_http_calls_total{funcname='${fname}',${qSvcNs1}}[1m]))`;
 
-            const qLatencySum = `sum by (funcname) (fission_http_call_latency_seconds_summary_sum{funcname='${fname}'})`;
-            const qMem = `sum by (functionName) ( k8s_pod_labels{functionName='${fname}'} * on (pod_name) group_left sum by (pod_name) (container_memory_usage_bytes{namespace='fission-function'}) )`;
-            const qCpu1m = `sum by (functionName) ( k8s_pod_labels{functionName = '${fname}'} * on (pod_name) group_left sum by (pod_name) ( rate(container_cpu_usage_seconds_total{namespace='fission-function'}[1m]) ) )`;
+            const qLatencySum = `sum by (funcname) (fission_http_call_latency_seconds_summary_sum{funcname='${fname}',${qSvcNs1}})`;
+            const qMem = `sum by (functionName) ( k8s_pod_labels{functionName='${fname}',${qFncNs}} * on (pod_name) group_left sum by (pod_name) (container_memory_usage_bytes{${qFncNs}}) )`;
+            const qCpu1m = `sum by (functionName) ( k8s_pod_labels{functionName = '${fname}',${qFncNs}} * on (pod_name) group_left sum by (pod_name) ( rate(container_cpu_usage_seconds_total{${qFncNs}}[1m]) ) )`;
 
-            const qCode = `sum by (code) (fission_http_calls_total{funcname='app-test'})`;
-            const qRespSizeSum = `sum by (funcname) (fission_http_call_response_size_bytes_summary_sum{funcname='${fname}'})`;
+            const qCode = `sum by (code) (fission_http_calls_total{funcname='${fname}',${qSvcNs1}})`;
+            const qRespSizeSum = `sum by (funcname) (fission_http_call_response_size_bytes_summary_sum{funcname='${fname}',${qSvcNs1}})`;
             $.when(
                 $.get(`${prometheus}/query?query=${qInstanceNumber}`, makeStoreValue(store, 'instanceNumber')),
                 $.get(`${prometheus}/query?query=${qAvgAliveTime}`, makeStoreValue(store, 'avgAliveTime')),
