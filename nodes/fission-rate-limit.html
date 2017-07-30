@@ -36,13 +36,30 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-rate-limit">
-    <p> help </p>
+    <p> Limit message rate and drop invalid messages</p>
 
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">various</span></dt>
+        <dd>All kinds of messages.</dd>
+        <dt>topic<span class="property-type">string</span></dt>
+        <dd>The topic for rate limitation.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <p><b>Note</b>: If valid, the first output will be activated, if not, the second.</p>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">object</span></dt>
+        <dd>The original message from upstream.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>The function limits message by topic.</p>
+    <p>It will send every valid message to first output, and drop invalid message to second output.</p>
+    <p>The message validity is depend on the passed message rate.</p>
 </script>
 
 <script type="text/javascript">
     RED.nodes.registerType('fission-rate-limit', {
-        category: 'function',
+        category: 'control',
         color: "#E6E0F8",
         defaults: {
             name: {value: ""},

@@ -124,22 +124,22 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-minio-adapter">
-    <p>Creates a Minio adapter end-point for creating web services.</p>
+    <p>Receive events from Minio.</p>
 
 </script>
 
 <script type="text/x-red" data-help-name="fission-minio-put">
-    <p>Creates a Minio adapter end-point for creating web services.</p>
+    <p>Put payload to Minio.</p>
 
 </script>
 
 <script type="text/x-red" data-help-name="fission-minio-fput">
-    <p>Creates a Minio adapter end-point for creating web services.</p>
+    <p>Put files to Minio.</p>
 
 </script>
 
 <script type="text/x-red" data-help-name="fission-minio-get">
-    <p>Creates a Minio adapter end-point for creating web services.</p>
+    <p>Get objects as payload or files from Minio.</p>
 
 </script>
 
@@ -258,7 +258,6 @@
         function loadInstanceList(serviceclass, insList) {
             $.get(`${catalog}/apis/servicecatalog.k8s.io/v1alpha1/namespaces/fission/instances`, (data, status) => {
                 if (status === 'success') {
-                    console.log(data);
                     instanceNameToId = {};
                     const instancenames = data.items.filter((item) => {
                         instanceNameToId[item.metadata.name] = item.spec.externalID;
@@ -292,8 +291,6 @@
         function onEditSave(that) {
             // update the service instances of the backend function if needed
             setTimeout(() => {
-                console.log(that);
-
                 $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
                     if (data.serviceInstances.some((i) => i === that.instancename)) {
                         return;
@@ -320,8 +317,8 @@
         }
 
         RED.nodes.registerType('fission-minio-adapter', {
-            category: 'input',
-            color: "rgb(231, 231, 174)",
+            category: 'storage-input',
+            color: "#FF9966",
             defaults: {
                 name: {value: ""},
                 autoresp: {value: true},
@@ -335,7 +332,11 @@
             outputs: 1,
             icon: "db.png",
             label: function () {
-                return this.name || this.instancename || 'minio-adapter';
+                let label = '';
+                if (this.bucket) {
+                    label = 'When events in [' + this.bucket + ']'
+                }
+                return this.name || label || 'When events in Minio';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";
@@ -349,7 +350,6 @@
                 // create new fission minio adapter
                 // create new fission minio nats streaming trigger
                 setTimeout(() => {
-                    console.log(that);
                     deleteAdapter(that, postAdapter);
                     deleteTrigger(that, postTrigger);
                 }, 200);
@@ -357,8 +357,8 @@
         });
 
         RED.nodes.registerType('fission-minio-put', {
-            category: 'output',
-            color: "rgb(231, 231, 174)",
+            category: 'storage-output',
+            color: "#FF9966",
             defaults: {
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
@@ -371,7 +371,11 @@
             outputs: 0,
             icon: "db.png",
             label: function () {
-                return this.name || this.bucket || 'minio-put';
+                let label = '';
+                if (this.bucket) {
+                    label = 'Put to [' + this.bucket + ']'
+                }
+                return this.name || label || 'Put to Minio';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";
@@ -383,8 +387,8 @@
         });
 
         RED.nodes.registerType('fission-minio-fput', {
-            category: 'function',
-            color: "rgb(231, 231, 174)",
+            category: 'storage-function',
+            color: "#FF9966",
             defaults: {
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
@@ -396,7 +400,11 @@
             outputs: 2,
             icon: "db.png",
             label: function () {
-                return this.name || this.bucket || 'minio-fput';
+                let label = '';
+                if (this.bucket) {
+                    label = 'Put files to [' + this.bucket + ']'
+                }
+                return this.name || label || 'Put files to Minio';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";
@@ -408,8 +416,8 @@
         });
 
         RED.nodes.registerType('fission-minio-get', {
-            category: 'function',
-            color: "rgb(231, 231, 174)",
+            category: 'storage-function',
+            color: "#FF9966",
             defaults: {
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
@@ -422,7 +430,11 @@
             outputs: 2,
             icon: "db.png",
             label: function () {
-                return this.name || this.bucket || 'minio-get';
+                let label = '';
+                if (this.bucket) {
+                    label = 'Get from [' + this.bucket + ']'
+                }
+                return this.name || label || 'Get from Minio';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";

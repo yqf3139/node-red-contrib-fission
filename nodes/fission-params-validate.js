@@ -19,8 +19,6 @@ module.exports = function (RED) {
 
     // throws if msg is not validated
     function validate(msg, template) {
-        console.log(template);
-        console.log(Object.keys(template));
         Object.keys(template).map((k) => {
             const v = template[k];
             if (!msg.hasOwnProperty(k)) {

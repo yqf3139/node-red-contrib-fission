@@ -312,7 +312,6 @@
             ).then(() => {
                 store['latencyAvg'] = prettyFloat(store['latencySum'] / store['invocationNumber']);
                 store['respSizeAvg'] = prettyFloat(store['respSizeSum'] / store['invocationNumber']);
-                console.log(store);
                 visOpsData(store);
             });
         }
@@ -324,7 +323,7 @@
 
         RED.nodes.registerType('fission-invocation', {
             category: 'function',
-            color: '#a6bbcf',
+            color: '#99CC99',
             defaults: {
                 name: {value: ""},
                 readonly: {value: true},
@@ -348,7 +347,7 @@
             outputs: 2,
             icon: "function.png",
             label: function () {
-                return this.name || this.funcname || "fission-invocation";
+                return this.name || this.funcname || "Invoke function";
             },
             outputLabels: ["stdout", "stderr"],
             oneditsave: function () {
@@ -753,4 +752,28 @@
 <script type="text/x-red" data-help-name="fission-invocation">
     <p>Nodes that invoke, manager fission functions </p>
 
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>req<span class="property-type">object</span></dt>
+        <dd>(Optional) The http request.</dd>
+        <dt>payload<span class="property-type">various</span></dt>
+        <dd>(Optional) The standard payload.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <p><b>Note</b>: If success, the first output will be activated, if not, the second.</p>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">object</span></dt>
+        <dd>The response message from the fission function.</dd>
+        <dt>headers<span class="property-type">object</span></dt>
+        <dd>The response headers from the fission function.</dd>
+        <dt>statusCode<span class="property-type">string</span></dt>
+        <dd>The standard http status code.</dd>
+        <dt>statusText<span class="property-type">string</span></dt>
+        <dd>The standard http status text.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>The function invokes the target fission function.</p>
+    <p>If the req and res is in the msg, it will proxy the req to fission.</p>
+    <p>Otherwise, it will warp the payload and then POST it to target fission function.</p>
+    <p>All the http result will be parsed and then passed to the next node.</p>
 </script>

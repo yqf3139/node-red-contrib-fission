@@ -26,7 +26,15 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-timetrigger">
-    <p>Creates an Timer end-point for creating web services.</p>
+    <p>Receive events from fission timer.</p>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">object</span></dt>
+        <dd>The timer event headers from the fission function.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>The function receives events from a fission timer and passes the event to next node.</p>
 </script>
 
 <script type="text/javascript">
@@ -82,7 +90,7 @@
 
         RED.nodes.registerType('fission-timetrigger', {
             category: 'input',
-            color: "rgb(231, 231, 174)",
+            color: "#CCCCFF",
             defaults: {
                 name: {value: ""},
                 cron: {value: "", required: true},
@@ -91,7 +99,11 @@
             outputs: 1,
             icon: "timer.png",
             label: function () {
-                return this.name || this.cron || 'timer';
+                let label = '';
+                if (this.cron) {
+                    label = 'When [' + this.cron + '] triggers'
+                }
+                return this.name || label || 'When timer triggers';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";
@@ -106,7 +118,6 @@
                 const that = this;
                 // create new fission time trigger
                 setTimeout(() => {
-                    console.log(that);
                     deleteTrigger(that, postTrigger);
                 }, 200);
             }
