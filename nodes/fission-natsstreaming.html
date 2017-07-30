@@ -52,11 +52,11 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-natstrigger">
-    <p>Creates a Nats end-point for creating web services.</p>
+    <p>Listens to NATS events on a topic.</p>
 </script>
 
 <script type="text/x-red" data-help-name="fission-natspublisher">
-    <p>Creates a Nats publisher for creating web services.</p>
+    <p>Publish a event to NATS on a topic.</p>
 </script>
 
 <script type="text/javascript">
@@ -114,7 +114,7 @@
         }
 
         RED.nodes.registerType('fission-natstrigger', {
-            category: 'input',
+            category: 'storage-input',
             color: "rgb(231, 231, 174)",
             defaults: {
                 name: {value: ""},
@@ -127,7 +127,11 @@
             outputs: 1,
             icon: "bridge.png",
             label: function () {
-                return this.name || this.topic || 'natstrigger';
+                let label = '';
+                if (this.topic) {
+                    label = 'When new msg in NATS [' + this.topic + ']';
+                }
+                return this.name || label || 'When new msg in NATS';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";
@@ -142,14 +146,13 @@
                 const that = this;
                 // create new fission messagequeue trigger
                 setTimeout(() => {
-                    console.log(that);
                     deleteTrigger(that, postTrigger);
                 }, 200);
             }
         });
 
         RED.nodes.registerType('fission-natspublisher', {
-            category: 'output',
+            category: 'storage-output',
             color: "rgb(231, 231, 174)",
             defaults: {
                 name: {value: ""},
@@ -159,7 +162,11 @@
             outputs: 0,
             icon: "bridge.png",
             label: function () {
-                return this.name || this.topic || 'natspulisher';
+                let label = '';
+                if (this.topic) {
+                    label = 'Publish to NATS [' + this.topic + ']';
+                }
+                return this.name || label || 'Publish to NATS';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";

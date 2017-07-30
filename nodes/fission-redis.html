@@ -206,8 +206,27 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-redis">
-    <p>Creates a Redis adapter end-point for creating web services.</p>
+    <p>Invoke redis commands.</p>
 
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">various</span></dt>
+        <dd>The params array according to the redis command.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <p><b>Note</b>: If success, the first output will be activated, if not, the second.</p>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">object</span></dt>
+        <dd>The response message from the fission function.</dd>
+        <dt>headers<span class="property-type">object</span></dt>
+        <dd>The response headers from the fission function.</dd>
+        <dt>statusCode<span class="property-type">string</span></dt>
+        <dd>The standard http status code.</dd>
+        <dt>statusText<span class="property-type">string</span></dt>
+        <dd>The standard http status text.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>The function will use the redis command and payload as params to invoke the fission redis function.</p>
 </script>
 
 <script type="text/javascript">
@@ -220,7 +239,6 @@
         function loadInstanceList(serviceclass, insList) {
             $.get(`${catalog}/apis/servicecatalog.k8s.io/v1alpha1/namespaces/fission/instances`, (data, status) => {
                 if (status === 'success') {
-                    console.log(data);
                     const instancenames = data.items.filter((item) => {
                         return item.spec.serviceClassName === serviceclass;
                     }).map((item) => item.metadata.name);
@@ -252,8 +270,6 @@
         function onEditSave(that) {
             // update the service instances of the backend function if needed
             setTimeout(() => {
-                console.log(that);
-
                 $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
                     if (data.serviceInstances.some((i) => i === that.instancename)) {
                         return;
@@ -280,8 +296,8 @@
         }
 
         RED.nodes.registerType('fission-redis', {
-            category: 'function',
-            color: "rgb(231, 231, 174)",
+            category: 'storage',
+            color: "#FF6666",
             defaults: {
                 name: {value: ""},
                 serviceclass: {value: "redis", required: true},
@@ -293,7 +309,11 @@
             outputs: 2,
             icon: "redis.png",
             label: function () {
-                return this.name || this.command || 'redis';
+                let label = '';
+                if (this.command) {
+                    label = 'Redis [' + this.command + ']';
+                }
+                return this.name || label || 'Redis';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";

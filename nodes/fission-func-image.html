@@ -31,8 +31,32 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-func-image">
-    <p>Creates a Image adapter end-point for creating web services.</p>
+    <p>A Image processing function using node/sharp.</p>
 
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">various</span></dt>
+        <dd>The S3 bucket input event.</dd>
+        <dt>payload.dstbkt<span class="property-type">string</span></dt>
+        <dd>The destination bucket name.</dd>
+        <dt>payload.resize<span class="property-type">various</span></dt>
+        <dd>The configure of resize operation: width, height, grey.</dd>
+    </dl>
+    <h3>Outputs</h3>
+    <p><b>Note</b>: If success, the first output will be activated, if not, the second.</p>
+    <dl class="message-properties">
+        <dt>payload<span class="property-type">object</span></dt>
+        <dd>The response message from the fission function.</dd>
+        <dt>headers<span class="property-type">object</span></dt>
+        <dd>The response headers from the fission function.</dd>
+        <dt>statusCode<span class="property-type">string</span></dt>
+        <dd>The standard http status code.</dd>
+        <dt>statusText<span class="property-type">string</span></dt>
+        <dd>The standard http status text.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>The function will work with S3 compatible services.</p>
+    <p>For all the images in a S3 event, it will convert the images and then save results to the target bucket</p>
 </script>
 
 <script type="text/javascript">
@@ -45,7 +69,6 @@
         function loadInstanceList(serviceclass, insList) {
             $.get(`${catalog}/apis/servicecatalog.k8s.io/v1alpha1/namespaces/fission/instances`, (data, status) => {
                 if (status === 'success') {
-                    console.log(data);
                     const instancenames = data.items.filter((item) => {
                         return item.spec.serviceClassName === serviceclass;
                     }).map((item) => item.metadata.name);
@@ -77,8 +100,6 @@
         function onEditSave(that) {
             // update the service instances of the backend function if needed
             setTimeout(() => {
-                console.log(that);
-
                 $.get(`${controller}/v1/functions/${that.funcname}`, (data, status) => {
                     if (data.serviceInstances.some((i) => i === that.instancename)) {
                         return;
@@ -105,8 +126,8 @@
         }
 
         RED.nodes.registerType('fission-func-image', {
-            category: 'function',
-            color: "rgb(231, 231, 174)",
+            category: 'image',
+            color: "#99CC99",
             defaults: {
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
@@ -117,7 +138,7 @@
             outputs: 2,
             icon: "function.png",
             label: function () {
-                return this.name || 'func-image';
+                return this.name || 'Convert images';
             },
             labelStyle: function () {
                 return this.name ? "node_label_italic" : "";

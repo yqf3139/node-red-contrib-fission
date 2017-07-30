@@ -35,7 +35,18 @@
 </script>
 
 <script type="text/x-red" data-help-name="fission-httptrigger">
-    <p>Creates an HTTP end-point for creating web services.</p>
+    <p>Listens to a HTTP end-point managed by fission.</p>
+
+    <h3>Outputs</h3>
+    <dl class="message-properties">
+        <dt>payload.req<span class="property-type">object</span></dt>
+        <dd>The request from the client.</dd>
+        <dt>payload.res<span class="property-type">object</span></dt>
+        <dd>The response to the client.</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>The function service as an endpoint for fission http trigger.</p>
+    <p>It will pass the http request and response to the next node.</p>
 </script>
 
 <script type="text/javascript">
@@ -114,7 +125,7 @@
                     } else {
                         root += this.url;
                     }
-                    return "[" + this.method + "] " + root;
+                    return "When " + this.method + " [" + root + "] ";
                 } else {
                     return "http";
                 }
@@ -129,7 +140,6 @@
                 const that = this;
                 // create new fission http trigger
                 setTimeout(() => {
-                    console.log(that);
                     deleteTrigger(that, postTrigger);
                 }, 200);
             }

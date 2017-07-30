@@ -49,7 +49,7 @@
 </script>
 
 <script type="text/x-red" data-help-name="mailgun">
-    <p>Creates a Mailgun sender for creating web services.</p>
+    <p>Send emails via mailgun.</p>
 </script>
 
 <script type="text/javascript">
@@ -57,7 +57,7 @@
         "use strict";
 
         RED.nodes.registerType('mailgun', {
-            category: 'output',
+            category: 'social',
             color: "rgb(231, 231, 174)",
             defaults: {
                 name: {value: ""},
@@ -67,7 +67,7 @@
             outputs: 0,
             icon: "envelope.png",
             label: function () {
-                return this.name || 'email via gun';
+                return this.name || 'Email via mailgun';
             }
         });
     })();

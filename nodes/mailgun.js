@@ -43,7 +43,6 @@ module.exports = function (RED) {
 
             mailgun.messages().send(data, function (error, body) {
                 node.aliveRequests -= 1;
-                console.log(body);
                 if (error) {
                     node.status({fill: "red", shape: "dot", text: "an email not sent", running: node.aliveRequests > 0});
                     setTimeout(() => {
