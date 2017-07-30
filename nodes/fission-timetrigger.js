@@ -35,6 +35,10 @@ module.exports = function (RED) {
             this.callback = function (req, res) {
                 const msgid = RED.util.generateId();
                 res._msgid = msgid;
+                node.status({fill: "blue", shape: "dot", text: `triggered`, running: true});
+                setTimeout(() => {
+                    node.status({});
+                }, 500);
                 node.send({_msgid: msgid, payload: req.headers});
                 res.sendStatus(200);
             };

@@ -44,6 +44,10 @@ module.exports = function (RED) {
                 } else {
                     node.send({_msgid: msgid, req, res: {_res: res}, payload: req.body});
                 }
+                node.status({fill: "blue", shape: "dot", text: `triggered`, running: true});
+                setTimeout(() => {
+                    node.status({});
+                }, 500);
             };
 
             let metricsHandler = function (req, res, next) {
@@ -88,7 +92,10 @@ module.exports = function (RED) {
             api.invokeFunction(funcname, 'POST', {}, {}, {topic, payload: msg.payload}).then((response) => {
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
-                    node.status({});
+                    node.status({fill: "green", shape: "dot", text: `success`, running: true});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 2000);
                 } else {
                     node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`,
                         running: node.aliveRequests > 0});
@@ -96,6 +103,9 @@ module.exports = function (RED) {
             }).catch((err) => {
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+                setTimeout(() => {
+                    if (node.aliveRequests === 0) node.status({});
+                }, 5000);
             });
         })
     }

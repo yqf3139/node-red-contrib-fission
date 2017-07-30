@@ -45,6 +45,10 @@ module.exports = function (RED) {
                 } else {
                     node.send({_msgid: msgid, req, res: {_res: res}, payload: req.body});
                 }
+                node.status({fill: "blue", shape: "dot", text: `triggered`, running: true});
+                setTimeout(() => {
+                    node.status({});
+                }, 500);
             };
 
             let metricsHandler = function (req, res, next) {
@@ -97,13 +101,19 @@ module.exports = function (RED) {
 
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
-                    node.status({});
+                    node.status({fill: "green", shape: "dot", text: `success`, running: true});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 2000);
                 } else {
                     node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`});
                 }
             }).catch((err) => {
                 node.status({fill: "red", shape: "dot", text: "an invocation failed"});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+                setTimeout(() => {
+                    if (node.aliveRequests === 0) node.status({});
+                }, 5000);
             });
         })
     }
@@ -138,7 +148,10 @@ module.exports = function (RED) {
 
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
-                    node.status({});
+                    node.status({fill: "green", shape: "dot", text: `success`, running: true});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 2000);
                 } else {
                     node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: node.aliveRequests > 0});
                 }
@@ -148,6 +161,9 @@ module.exports = function (RED) {
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+                setTimeout(() => {
+                    if (node.aliveRequests === 0) node.status({});
+                }, 5000);
                 Common.fillMsg(msg, err.response);
                 node.send([null, msg]);
             });
@@ -188,7 +204,10 @@ module.exports = function (RED) {
 
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
-                    node.status({});
+                    node.status({fill: "green", shape: "dot", text: `success`, running: true});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 2000);
                 } else {
                     node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: node.aliveRequests > 0});
                 }
@@ -196,6 +215,9 @@ module.exports = function (RED) {
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+                setTimeout(() => {
+                    if (node.aliveRequests === 0) node.status({});
+                }, 5000);
             });
         })
     }

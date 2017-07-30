@@ -46,11 +46,18 @@ module.exports = function (RED) {
                 console.log(body);
                 if (error) {
                     node.status({fill: "red", shape: "dot", text: "an email not sent", running: node.aliveRequests > 0});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 5000);
                     node.error(`invoke mailgun failed, with error: ${error}`);
                     return;
                 }
+
                 if (node.aliveRequests === 0) {
-                    node.status({});
+                    node.status({fill: "green", shape: "dot", text: `success`, running: true});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 2000);
                 } else {
                     node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`,
                         running: node.aliveRequests > 0});

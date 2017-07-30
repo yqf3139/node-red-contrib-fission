@@ -45,7 +45,10 @@ module.exports = function (RED) {
 
                 node.aliveRequests -= 1;
                 if (node.aliveRequests === 0) {
-                    node.status({});
+                    node.status({fill: "green", shape: "dot", text: `success`, running: true});
+                    setTimeout(() => {
+                        if (node.aliveRequests === 0) node.status({});
+                    }, 2000);
                 } else {
                     node.status({
                         fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`,
@@ -58,6 +61,9 @@ module.exports = function (RED) {
                 node.aliveRequests -= 1;
                 node.status({fill: "red", shape: "dot", text: "an invocation failed", running: node.aliveRequests > 0});
                 node.error(`invoke fission func [${funcname}] failed, with error: ${err}`);
+                setTimeout(() => {
+                    if (node.aliveRequests === 0) node.status({});
+                }, 5000);
                 Common.fillMsg(msg, err.response);
                 node.send([null, msg]);
             });

@@ -104,6 +104,11 @@ module.exports = function (RED) {
                 } else {
                     node.send({_msgid: msgid, req, res: {_res: res}, token});
                 }
+
+                node.status({fill: "blue", shape: "dot", text: `triggered`, running: true});
+                setTimeout(() => {
+                    node.status({});
+                }, 500);
             };
 
             let metricsHandler = function (req, res, next) {
