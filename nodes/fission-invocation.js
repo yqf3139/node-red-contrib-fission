@@ -40,7 +40,7 @@ module.exports = function (RED) {
 
             // if a http req in
             // parse req into body
-            if (msg.req) {
+            if (msg.payload === undefined && msg.req) {
                 method = msg.req.method;
                 headers = msg.req.headers;
                 params = msg.req.query;
