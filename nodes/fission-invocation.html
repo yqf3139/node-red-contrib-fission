@@ -491,6 +491,14 @@
                                     .appendTo(versionList);
                             });
                         });
+                    } else {
+                        that.editor.setValue(`
+module.exports = function (context, callback) {
+    const request = context.request;
+    const payload = request.body.payload;
+    callback(200, {});
+};
+`);
                     }
 
                     // add event listeners
