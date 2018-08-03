@@ -35,10 +35,6 @@ module.exports = function (context, callback) {
     });
     async.parallel(jobs, (err, results) => {
         const sum = results.map((i) => i === null ? 0 : 1).reduce((a, b) => a + b);
-        callback(200, {
-            err: '',
-            msg: `put files: ${sum} / ${results.length}`,
-            payload: results.filter((i) => i !== null)
-        });
+        callback(200, results.filter((i) => i !== null));
     });
 };

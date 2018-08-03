@@ -28,6 +28,25 @@
         <select type="text" id="node-input-instancename" style="width:70%;">
         </select>
     </div>
+    <div class="form-row">
+        <label for="node-input-dstbkt"><i class="fa fa-tasks"></i> Destination Bucket</label>
+        <input id="node-input-dstbkt" type="text" placeholder="" value="">
+    </div>
+    <div class="form-row">
+        <label for="node-input-width"><i class="fa fa-tasks"></i> Image Width</label>
+        <input id="node-input-width" type="text" placeholder="" value="">
+    </div>
+    <div class="form-row">
+        <label for="node-input-height"><i class="fa fa-tasks"></i> Image Height</label>
+        <input id="node-input-height" type="text" placeholder="" value="">
+    </div>
+    <div class="form-row">
+        <label for="node-input-grey"><i class="fa fa-tasks"></i> Image Grey</label>
+        <select id="node-input-grey" style="width:90px !important">
+            <option value="false">false</option>
+            <option value="true">true</option>
+        </select>
+    </div>
 </script>
 
 <script type="text/x-red" data-help-name="fission-func-image">
@@ -132,6 +151,10 @@
                 name: {value: ""},
                 serviceclass: {value: "minio", required: true},
                 instancename: {value: "", required: true},
+                dstbkt: {value: "", required: true},
+                width: {value: "", required: true},
+                height: {value: "", required: true},
+                grey: {value: "", required: true},
                 funcname: {value: "std-image-convert"},
             },
             inputs: 1,

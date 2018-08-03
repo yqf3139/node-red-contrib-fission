@@ -26,6 +26,10 @@ module.exports = function (RED) {
         const node = this;
 
         node.instancename = n.instancename;
+        node.dstbkt = n.dstbkt;
+        node.width = parseInt(n.width);
+        node.height = parseInt(n.height);
+        node.grey = n.grey === 'true';
         node.aliveRequests = 0;
 
         node.on('input', function (msg) {
@@ -36,6 +40,13 @@ module.exports = function (RED) {
 
             node.aliveRequests += 1;
             node.status({fill: "green", shape: "ring", text: `running ${node.aliveRequests} reqs`, running: true});
+
+            msg.payload.dstbkt = node.dstbkt;
+            msg.payload.resize = {
+                "width": node.width,
+                "height": node.height,
+                "grey": node.grey
+            };
 
             api.invokeFunction(funcname, 'POST', {}, {},
                 {instancename, payload: msg.payload}).then((response) => {
